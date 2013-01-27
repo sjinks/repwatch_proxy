@@ -1,0 +1,10 @@
+*.o
+*.pro.user
+*.a
+*.la
+*.lai
+*.moc
+moc_*
+*.so
+Makefile
+Makefile.*

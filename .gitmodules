@@ -1,0 +1,9 @@
+[submodule "libs/qt_eventdispatcher_libevent"]
+	path = libs/qt_eventdispatcher_libevent
+	url = git://github.com/sjinks/qt_eventdispatcher_libevent.git
+[submodule "libs/qt_signalwatcher"]
+	path = libs/qt_signalwatcher
+	url = git://github.com/sjinks/qt_signalwatcher.git
+[submodule "libs/qt_socketconnector"]
+	path = libs/qt_socketconnector
+	url = git://github.com/sjinks/qt_socketconnector.git

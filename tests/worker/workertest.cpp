@@ -142,3 +142,31 @@ void WorkerTest::testGreetingProtocolFailure2(void)
 	QCOMPARE(spy.count(), 1);
 	QCOMPARE(spy.first().at(0), QVariant::fromValue(Worker::UnknownError));
 }
+
+void WorkerTest::testNoAuthSuccess(void)
+{
+	this->worker->setNoauthAllowed(true);
+	this->writeData(QByteArray("\x05\x01\x00", 3));
+	QCOMPARE(this->worker->m_state, Worker::AwaitingRequestState);
+
+	QByteArray buf;
+	QVERIFY(this->input->seek(3));
+	buf = this->input->readAll();
+	QCOMPARE(buf.size(), 2);
+	QCOMPARE(buf.at(0), '\x05');
+	QCOMPARE(buf.at(1), '\x00');
+}
+
+void WorkerTest::testNoAuthFailure()
+{
+	QVERIFY(!this->worker->noauthAllowed());
+	this->writeData(QByteArray("\x05\x01\x00", 3));
+	QCOMPARE(this->worker->m_state, Worker::ErrorState);
+
+	QByteArray buf;
+	QVERIFY(this->input->seek(3));
+	buf = this->input->readAll();
+	QCOMPARE(buf.size(), 2);
+	QCOMPARE(buf.at(0), '\x05');
+	QVERIFY(buf.at(1) != '\x00');
+}

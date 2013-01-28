@@ -65,12 +65,22 @@ void WorkerTest::testGreeting(void)
 	QCOMPARE(this->worker->m_buf.size(), 2);
 	QCOMPARE(this->worker->m_expected_length, 3);
 
+	int pos = this->input->pos() + 1;
 	this->writeData("\x02");
 	QVERIFY(!this->worker->m_target);
 	QVERIFY(!this->worker->m_connector);
 	QCOMPARE(this->worker->m_buf.size(), 0);
 	QCOMPARE(this->worker->m_expected_length, -1);
 	QCOMPARE(this->worker->m_state, Worker::AwaitingAuthenticationState);
+
+	QCoreApplication::processEvents();
+	QCOMPARE(int(this->input->pos()) - pos, 2);
+	QVERIFY(this->input->seek(pos));
+
+	QByteArray buf = this->input->readAll();
+	QCOMPARE(buf.size(), 2);
+	QCOMPARE(buf.at(0), '\x05');
+	QCOMPARE(buf.at(1), '\x02');
 
 	QPointer<QBuffer> b(this->input);
 	QPointer<Worker> w(this->worker);

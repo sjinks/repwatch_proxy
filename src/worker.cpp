@@ -152,14 +152,14 @@ void Worker::targetConnectFailureHandler(QAbstractSocket::SocketError e)
 void Worker::disconnectHandler(void)
 {
 	Q_EMIT this->connectionClosed();
-	this->m_peer->disconnect();
+	this->m_peer->disconnect(this);
 	this->m_peer->close();
 	this->m_peer->deleteLater();
 
 	QObject::connect(this->m_peer, SIGNAL(destroyed()), this, SLOT(deleteLater()), Qt::QueuedConnection);
 
 	if (this->m_target) {
-		this->m_target->disconnect();
+		this->m_target->disconnect(this);
 		this->m_target->close();
 		this->m_target->deleteLater();
 	}

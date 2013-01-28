@@ -249,8 +249,7 @@ void Worker::authenticate(void)
 			}
 		}
 	}
-
-	if (size > this->m_expected_length) {
+	else if (size > this->m_expected_length) {
 		this->m_state = Worker::FatalErrorState;
 		return;
 	}
@@ -310,8 +309,7 @@ void Worker::parseRequest(void)
 			}
 		}
 	}
-
-	if (size > this->m_expected_length) {
+	else if (size > this->m_expected_length) {
 		this->m_state = Worker::FatalErrorState;
 		return;
 	}

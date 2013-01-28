@@ -28,12 +28,17 @@ private Q_SLOTS:
 	void testGreeting(void);
 	void testGreetingProtocolFailure1(void);
 	void testGreetingProtocolFailure2(void);
-
 	void testGreetingTooMuchData(void);
 
 	void testNoAuthSuccess(void);
 	void testNoAuthFailure(void);
 	void testUnsupportedAuthMethod(void);
+	void testAuthTooMuchData(void);
+	void testAuthBadVersion(void);
+	void testRejectAuth(void);
+	void testAcceptAuth(void);
+	void testZeroLengthAuth(void);
+	void testAuthByteByByte(void);
 };
 
 #endif // WORKERTEST_H

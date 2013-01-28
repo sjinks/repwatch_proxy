@@ -8,7 +8,8 @@
 Worker::Worker(QIODevice* peer, QObject* parent)
 	: QObject(parent),
 	  m_peer(peer), m_target(0), m_connector(0),
-	  m_buf(), m_expected_length(-1), m_state(Worker::ConnectedState)
+	  m_buf(), m_expected_length(-1), m_state(Worker::ConnectedState),
+	  m_noauth_allowed(false)
 {
 	QObject::connect(this->m_peer, SIGNAL(readyRead()), this, SLOT(peerReadyReadHandler()));
 	QObject::connect(this->m_peer, SIGNAL(aboutToClose()), this, SLOT(disconnectHandler()));
@@ -29,6 +30,7 @@ void Worker::peerReadyReadHandler(void)
 
 	if (this->m_state == Worker::ErrorState) {
 		// Peer has not disconnected (though it should have) - closing the connection
+		Q_EMIT this->error(Worker::UnknownError);
 		peer->close();
 		return;
 	}
@@ -209,8 +211,8 @@ void Worker::parseGreeting(void)
 {
 	char response[] = "\x05\x02"; // Only password authentication accepted
 
-	if (-1 != this->m_buf.indexOf('\x00', 2)) {
-		this->m_state = Worker::AwaitingRequestState; // Unsupported auth method
+	if (this->m_noauth_allowed && -1 != this->m_buf.indexOf('\x00', 2)) {
+		this->m_state = Worker::AwaitingRequestState;
 		response[1]   = '\x00';
 	}
 	else if (-1 == this->m_buf.indexOf('\x02', 2)) {

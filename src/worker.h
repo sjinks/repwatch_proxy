@@ -20,6 +20,9 @@ public:
 		UnknownError
 	};
 
+	bool noauthAllowed(void) const { return this->m_noauth_allowed; }
+	void setNoauthAllowed(bool v)  { this->m_noauth_allowed = v; }
+
 private Q_SLOTS:
 	void peerReadyReadHandler(void);
 	void targetReadyReadHandler(void);
@@ -49,6 +52,7 @@ private:
 	QByteArray m_buf;
 	int m_expected_length;
 	Worker::State m_state;
+	bool m_noauth_allowed;
 
 	bool readGreeting(void);
 	void parseGreeting(void);

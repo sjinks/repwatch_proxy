@@ -6,6 +6,7 @@
 #include <signal.h>
 #include "myapplication.h"
 #include "signalwatcher.h"
+#include "worker.h"
 
 MyApplication::MyApplication(int &argc, char **argv)
 	: QCoreApplication(argc, argv), m_settings(0), m_servers()
@@ -86,8 +87,7 @@ void MyApplication::newConnectionHandler(void)
 		QTcpSocket* socket = server->nextPendingConnection();
 		Q_ASSERT(socket != 0);
 
-		// Handle connection
-		socket->close();
-		socket->deleteLater();
+		qDebug("New connection");
+		new Worker(socket, this);
 	}
 }

@@ -11,6 +11,7 @@ class Worker : public QObject {
 	Q_OBJECT
 public:
 	Worker(QTcpSocket* peer, QObject *parent = 0);
+	virtual ~Worker(void);
 
 private Q_SLOTS:
 	void peerReadyReadHandler(void);

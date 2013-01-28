@@ -1,3 +1,4 @@
+#include <QtCore/QDebug>
 #include <QtCore/QtEndian>
 #include <QtNetwork/QHostAddress>
 #include <QtNetwork/QTcpSocket>
@@ -9,7 +10,13 @@ Worker::Worker(QTcpSocket* peer, QObject* parent)
 	  m_peer(peer), m_target(0), m_connector(0),
 	  m_buf(), m_expected_length(-1), m_state(Worker::Connected)
 {
+	qDebug("Worker %p created", this);
 	QObject::connect(this->m_peer, SIGNAL(readyRead()), this, SLOT(peerReadyReadHandler()));
+}
+
+Worker::~Worker(void)
+{
+	qDebug("Worker %p destroyed", this);
 }
 
 void Worker::peerReadyReadHandler(void)
@@ -70,7 +77,8 @@ void Worker::peerReadyReadHandler(void)
 
 void Worker::targetReadyReadHandler(void)
 {
-	this->m_peer->write(this->m_target->readAll());
+	QByteArray buf = this->m_target->readAll();
+	this->m_peer->write(buf);
 	this->m_peer->flush();
 }
 
@@ -88,7 +96,7 @@ void Worker::targetConnectedHandler(void)
 		char ptr;
 	} data;
 
-	QByteArray response("\x05\x00\x00");
+	QByteArray response("\x05\x00\x00", 3);
 	QHostAddress a = this->m_peer->peerAddress();
 
 	if (a.protocol() == QAbstractSocket::IPv4Protocol) {
@@ -123,6 +131,7 @@ void Worker::targetConnectedHandler(void)
 
 void Worker::targetConnectFailureHandler(QAbstractSocket::SocketError e)
 {
+	qDebug() << "Failed to connect to target:" << e;
 	char response[] = "\x05\x05\x00\x01\x00\x00\x00\x00\x00\x00"; // Connection refused
 	if (e != QAbstractSocket::ConnectionRefusedError) {
 		response[1] = '\x02'; // General failure
@@ -138,9 +147,14 @@ void Worker::disconnectHandler(void)
 {
 	this->m_peer->close();
 	this->m_peer->deleteLater();
+	this->m_peer->disconnect();
+
+	QObject::connect(this->m_peer, SIGNAL(destroyed()), this, SLOT(deleteLater()), Qt::QueuedConnection);
+
 	if (this->m_target) {
 		this->m_target->close();
 		this->m_target->deleteLater();
+		this->m_target->disconnect();
 	}
 }
 
@@ -178,7 +192,11 @@ void Worker::parseGreeting(void)
 {
 	char response[] = "\x05\x02"; // Only password authentication accepted
 
-	if (-1 == this->m_buf.indexOf('\x02', 2)) {
+	if (-1 != this->m_buf.indexOf('\x00', 2)) {
+		this->m_state = Worker::AwaitingRequest; // Unsupported auth method
+		response[1]   = '\x00';
+	}
+	else if (-1 == this->m_buf.indexOf('\x02', 2)) {
 		this->m_state = Worker::Error; // Unsupported auth method
 		response[1]   = '\xFF';
 	}
@@ -344,4 +362,6 @@ void Worker::parseRequest(void)
 	this->m_state = Worker::RequestReceived;
 	QObject::connect(this->m_connector, SIGNAL(connected()), this, SLOT(targetConnectedHandler()));
 	QObject::connect(this->m_connector, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(targetConnectFailureHandler(QAbstractSocket::SocketError)));
+	qDebug() << address << port;
+	this->m_connector->connectToHost(address, port);
 }

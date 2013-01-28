@@ -277,6 +277,27 @@ void Worker::parseGreeting(void)
 	this->m_buf.clear();
 }
 
+/**
+ * @see http://tools.ietf.org/html/rfc1929
+ *
+ * Once the SOCKS V5 server has started, and the client has selected the
+ * Username/Password Authentication protocol, the Username/Password
+ * subnegotiation begins.  This begins with the client producing a
+ * Username/Password request:
+ *
+ *         +----+------+----------+------+----------+
+ *         |VER | ULEN |  UNAME   | PLEN |  PASSWD  |
+ *         +----+------+----------+------+----------+
+ *         | 1  |  1   | 1 to 255 |  1   | 1 to 255 |
+ *         +----+------+----------+------+----------+
+ *
+ * The VER field contains the current version of the subnegotiation,
+ * which is X'01'. The ULEN field contains the length of the UNAME field
+ * that follows. The UNAME field contains the username as known to the
+ * source operating system. The PLEN field contains the length of the
+ * PASSWD field that follows. The PASSWD field contains the password
+ * association with the given UNAME.
+ */
 void Worker::authenticate(void)
 {
 	int size = this->m_buf.size();
@@ -291,6 +312,7 @@ void Worker::authenticate(void)
 
 			if (ver != 1) {
 				this->m_state = Worker::FatalErrorState;
+				Q_EMIT this->error(Worker::ProtocolVersionMismatch);
 				return;
 			}
 		}
@@ -302,26 +324,80 @@ void Worker::authenticate(void)
 		return;
 	}
 
-	int ulen = static_cast<quint8>(this->m_buf.at(1));
-	int plen = static_cast<quint8>(this->m_buf.at(ulen + 2));
-	QByteArray username = QByteArray::fromRawData(this->m_buf.constData() + 2, ulen);
-	QByteArray password = QByteArray::fromRawData(this->m_buf.constData() + 2 + ulen, plen);
+	if (size == this->m_expected_length) {
+		int ulen = static_cast<quint8>(this->m_buf.at(1));
+		int plen = static_cast<quint8>(this->m_buf.at(ulen + 2));
+		QByteArray username = ulen ? QByteArray(this->m_buf.constData() + 2, ulen) : QByteArray();
+		QByteArray password = plen ? QByteArray(this->m_buf.constData() + 2 + ulen + 1, plen) : QByteArray();
+		this->m_expected_length = -1;
+		this->m_buf.clear();
+
+		Q_EMIT this->authenticateRequest(username, password);
+	}
+}
+
+/**
+ * @see http://tools.ietf.org/html/rfc1929
+ *
+ * The server verifies the supplied UNAME and PASSWD, and sends the
+ * following response:
+ *
+ *                      +----+--------+
+ *                      |VER | STATUS |
+ *                      +----+--------+
+ *                      | 1  |   1    |
+ *                      +----+--------+
+ *
+ * A STATUS field of X'00' indicates success. If the server returns a
+ * `failure' (STATUS value other than X'00') status, it MUST close the
+ * connection.
+ */
+void Worker::acceptAuthentication(void)
+{
+	if (this->m_state != Worker::AwaitingAuthenticationState) {
+		qWarning("Worker::acceptAuthentication() called while not in AwaitingAuthentication state");
+		return;
+	}
 
 	char response[] = "\x01\x00";
-	if (username != "repwatch" || password != "repwatch") {
-		this->m_state = Worker::ErrorState;
-		response[1] = '\xFF';
-	}
-	else {
-		this->m_state = Worker::AwaitingRequestState;
-	}
+	this->m_state = Worker::AwaitingRequestState;
 
 	if (2 != this->writeAndFlush(this->m_peer, response, 2)) {
 		this->m_state = Worker::FatalErrorState;
+		Q_EMIT this->error(Worker::IOError);
 	}
 
-	this->m_expected_length = -1;
-	this->m_buf.clear();
+}
+
+/**
+ * @see http://tools.ietf.org/html/rfc1929
+ *
+ * The server verifies the supplied UNAME and PASSWD, and sends the
+ * following response:
+ *
+ *                      +----+--------+
+ *                      |VER | STATUS |
+ *                      +----+--------+
+ *                      | 1  |   1    |
+ *                      +----+--------+
+ *
+ * A STATUS field of X'00' indicates success. If the server returns a
+ * `failure' (STATUS value other than X'00') status, it MUST close the
+ * connection.
+ */
+void Worker::rejectAuthentication(void)
+{
+	if (this->m_state != Worker::AwaitingAuthenticationState) {
+		qWarning("Worker::rejectAuthentication() called while not in AwaitingAuthentication state");
+		return;
+	}
+
+	char response[] = "\x01\xFF";
+	this->m_state   = Worker::ErrorState;
+	if (2 != this->writeAndFlush(this->m_peer, response, 2)) {
+		this->m_state = Worker::FatalErrorState;
+		Q_EMIT this->error(Worker::IOError);
+	}
 }
 
 void Worker::parseRequest(void)

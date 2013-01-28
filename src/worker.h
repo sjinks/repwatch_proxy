@@ -26,6 +26,10 @@ public:
 	bool noauthAllowed(void) const { return this->m_noauth_allowed; }
 	void setNoauthAllowed(bool v)  { this->m_noauth_allowed = v; }
 
+public Q_SLOTS:
+	void acceptAuthentication(void);
+	void rejectAuthentication(void);
+
 private Q_SLOTS:
 	void peerReadyReadHandler(void);
 	void targetReadyReadHandler(void);
@@ -36,6 +40,7 @@ private Q_SLOTS:
 Q_SIGNALS:
 	void connectionClosed(void);
 	void error(Worker::Error e);
+	void authenticateRequest(const QByteArray& username, const QByteArray& password);
 
 private:
 	enum State {

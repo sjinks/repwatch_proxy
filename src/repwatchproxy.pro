@@ -1,7 +1,8 @@
 QT      += network
 QT      -= gui
 TEMPLATE = app
-CONFIG  += hide_symbols release
+CONFIG  += console hide_symbols debug
+CONFIG  -= app_bundle
 VERSION  = 0.0.1
 TARGET   = repwatchproxy
 DESTDIR  = ../bin
@@ -15,12 +16,15 @@ DEFINES *= \
 	QT_DISABLE_DEPRECATED_BEFORE=0x050100
 
 HEADERS += \
-    myapplication.h \
-    worker.h
+	myapplication.h \
+	worker.h
+
 SOURCES += \
 	main.cpp \
-    myapplication.cpp \
-    worker.cpp
+	myapplication.cpp \
+	worker.cpp
+
+DEFINES += REPWATCHPROXY_VERSION=$$VERSION
 
 include(libeventdispatcher.pri)
 include(socketconnector.pri)

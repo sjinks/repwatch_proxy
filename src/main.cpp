@@ -1,4 +1,4 @@
-#include <QtCore/QCoreApplication>
+#include "myapplication.h"
 #include "eventdispatcher_libevent.h"
 
 int main(int argc, char** argv)
@@ -16,6 +16,6 @@ int main(int argc, char** argv)
 	QCoreApplication::setApplicationVersion(QLatin1String("0.0.1"));
 #endif
 
-	QCoreApplication app(argc, argv);
+	MyApplication app(argc, argv);
 	return app.exec();
 }

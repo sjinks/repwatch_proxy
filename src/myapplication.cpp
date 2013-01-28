@@ -43,6 +43,7 @@ int MyApplication::exec(void)
 		delete server;
 	}
 	else {
+		server->setMaxPendingConnections(128);
 		QObject::connect(server, SIGNAL(newConnection()), this, SLOT(newConnectionHandler()));
 		this->m_servers.append(server);
 	}

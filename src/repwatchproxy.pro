@@ -14,9 +14,13 @@ DEFINES *= \
 	QT_NO_URL_CAST_FROM_STRING \
 	QT_DISABLE_DEPRECATED_BEFORE=0x050100
 
-HEADERS +=
+HEADERS += \
+    myapplication.h \
+    worker.h
 SOURCES += \
-	main.cpp
+	main.cpp \
+    myapplication.cpp \
+    worker.cpp
 
 include(libeventdispatcher.pri)
 include(socketconnector.pri)

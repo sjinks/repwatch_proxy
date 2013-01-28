@@ -143,6 +143,16 @@ void WorkerTest::testGreetingProtocolFailure2(void)
 	QCOMPARE(spy.first().at(0), QVariant::fromValue(Worker::UnknownError));
 }
 
+void WorkerTest::testTooMuchData(void)
+{
+	QSignalSpy spy(this->worker, SIGNAL(error(Worker::Error)));
+
+	this->writeData("\x05\x01\x01\x01");
+	QCOMPARE(this->worker->m_state, Worker::FatalErrorState);
+	QCOMPARE(spy.count(), 1);
+	QCOMPARE(spy.first().at(0), QVariant::fromValue(Worker::TooMuchData));
+}
+
 void WorkerTest::testNoAuthSuccess(void)
 {
 	this->worker->setNoauthAllowed(true);
@@ -157,7 +167,7 @@ void WorkerTest::testNoAuthSuccess(void)
 	QCOMPARE(buf.at(1), '\x00');
 }
 
-void WorkerTest::testNoAuthFailure()
+void WorkerTest::testNoAuthFailure(void)
 {
 	QVERIFY(!this->worker->noauthAllowed());
 	this->writeData(QByteArray("\x05\x01\x00", 3));

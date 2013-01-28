@@ -17,6 +17,7 @@ public:
 	enum Error {
 		NoError,
 		ProtocolVersionMismatch,
+		TooMuchData,
 		UnknownError
 	};
 

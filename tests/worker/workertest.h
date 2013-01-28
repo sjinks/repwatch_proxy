@@ -29,6 +29,8 @@ private Q_SLOTS:
 	void testGreetingProtocolFailure1(void);
 	void testGreetingProtocolFailure2(void);
 
+	void testTooMuchData(void);
+
 	void testNoAuthSuccess(void);
 	void testNoAuthFailure(void);
 };

@@ -171,6 +171,22 @@ void Worker::disconnectHandler(void)
 	}
 }
 
+/**
+ * @see http://tools.ietf.org/html/rfc1928
+ *
+ * The client connects to the server, and sends a version
+ * identifier/method selection message:
+ *
+ *              +----+----------+----------+
+ *              |VER | NMETHODS | METHODS  |
+ *              +----+----------+----------+
+ *              | 1  |    1     | 1 to 255 |
+ *              +----+----------+----------+
+ *
+ * The VER field is set to X'05' for this version of the protocol. The
+ * NMETHODS field contains the number of method identifier octets that
+ * appear in the METHODS field.
+ */
 bool Worker::readGreeting(void)
 {
 	int size = this->m_buf.size();
@@ -194,8 +210,10 @@ bool Worker::readGreeting(void)
 			this->m_expected_length = 2 + len;
 		}
 	}
-	else if (size > this->m_expected_length) {
+
+	if (this->m_expected_length != -1 && size > this->m_expected_length) {
 		this->m_state = Worker::FatalErrorState;
+		Q_EMIT this->error(Worker::TooMuchData);
 		return false;
 	}
 
@@ -249,8 +267,10 @@ void Worker::authenticate(void)
 			}
 		}
 	}
-	else if (size > this->m_expected_length) {
+
+	if (this->m_expected_length != -1 && size > this->m_expected_length) {
 		this->m_state = Worker::FatalErrorState;
+		Q_EMIT this->error(Worker::TooMuchData);
 		return;
 	}
 
@@ -309,8 +329,10 @@ void Worker::parseRequest(void)
 			}
 		}
 	}
-	else if (size > this->m_expected_length) {
+
+	if (this->m_expected_length != -1 && size > this->m_expected_length) {
 		this->m_state = Worker::FatalErrorState;
+		Q_EMIT this->error(Worker::TooMuchData);
 		return;
 	}
 

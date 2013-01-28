@@ -4,14 +4,20 @@
 #include <QtCore/QObject>
 #include <QtNetwork/QAbstractSocket>
 
+class QIODevice;
 class QTcpSocket;
 class SocketConnector;
 
 class Worker : public QObject {
 	Q_OBJECT
 public:
-	Worker(QTcpSocket* peer, QObject *parent = 0);
+	Worker(QIODevice* peer, QObject *parent = 0);
 	virtual ~Worker(void);
+
+	enum Error {
+		NoError,
+		ProtocolVersionMismatch
+	};
 
 private Q_SLOTS:
 	void peerReadyReadHandler(void);
@@ -20,19 +26,23 @@ private Q_SLOTS:
 	void targetConnectFailureHandler(QAbstractSocket::SocketError e);
 	void disconnectHandler(void);
 
+Q_SIGNALS:
+	void connectionClosed(void);
+	void error(Worker::Error e);
+
 private:
 	enum State {
-		Connected,
-		GreetingReceived, // Client has sent the greeting
-		AwaitingAuthentication, // Server has replied with the list of supported authentication methods
-		AwaitingRequest, // Authentication succeeded, waiting for the request
-		RequestReceived,
-		ConnectionProxied,
-		Error,
-		FatalError
+		ConnectedState,
+		GreetingReceivedState, // Client has sent the greeting
+		AwaitingAuthenticationState, // Server has replied with the list of supported authentication methods
+		AwaitingRequestState, // Authentication succeeded, waiting for the request
+		RequestReceivedState,
+		ConnectionProxiedState,
+		ErrorState,
+		FatalErrorState
 	};
 
-	QTcpSocket* m_peer;
+	QIODevice* m_peer;
 	QTcpSocket* m_target;
 	SocketConnector* m_connector;
 	QByteArray m_buf;
@@ -43,6 +53,11 @@ private:
 	void parseGreeting(void);
 	void authenticate(void);
 	void parseRequest(void);
+
+	qint64 writeAndFlush(QIODevice* device, const char* buf, int size);
+	qint64 writeAndFlush(QIODevice* device, const QByteArray& buf);
+
+	friend class WorkerTest;
 };
 
 #endif // WORKER_H

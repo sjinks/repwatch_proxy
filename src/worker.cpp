@@ -1,76 +1,77 @@
-#include <QtCore/QDebug>
 #include <QtCore/QtEndian>
+#include <QtCore/QIODevice>
 #include <QtNetwork/QHostAddress>
 #include <QtNetwork/QTcpSocket>
 #include "socketconnector.h"
 #include "worker.h"
 
-Worker::Worker(QTcpSocket* peer, QObject* parent)
+Worker::Worker(QIODevice* peer, QObject* parent)
 	: QObject(parent),
 	  m_peer(peer), m_target(0), m_connector(0),
-	  m_buf(), m_expected_length(-1), m_state(Worker::Connected)
+	  m_buf(), m_expected_length(-1), m_state(Worker::ConnectedState)
 {
-	qDebug("Worker %p created", this);
 	QObject::connect(this->m_peer, SIGNAL(readyRead()), this, SLOT(peerReadyReadHandler()));
+	QObject::connect(this->m_peer, SIGNAL(aboutToClose()), this, SLOT(disconnectHandler()));
 }
 
 Worker::~Worker(void)
 {
-	qDebug("Worker %p destroyed", this);
 }
 
 void Worker::peerReadyReadHandler(void)
 {
-	QTcpSocket* peer = qobject_cast<QTcpSocket*>(this->sender());
+	QIODevice* peer = qobject_cast<QIODevice*>(this->sender());
 	Q_ASSERT(peer != 0);
 
-	if (this->m_state == Worker::Error) {
-		// Peer has not disconnected - closing the connection
+	if (this->m_state == Worker::ErrorState) {
+		// Peer has not disconnected (though it should have) - closing the connection
 		peer->close();
 		return;
 	}
 
-	this->m_buf.append(peer->readAll());
+	QByteArray buf;
+	buf = peer->readAll();
+	this->m_buf.append(buf);
 
 	bool cont;
 	do {
 		cont = false;
 		switch(this->m_state) {
-			case Worker::Connected:
+			case Worker::ConnectedState:
 				cont = this->readGreeting();
 				break;
 
-			case Worker::GreetingReceived:
+			case Worker::GreetingReceivedState:
 				this->parseGreeting();
 				break;
 
-			case Worker::AwaitingAuthentication:
+			case Worker::AwaitingAuthenticationState:
 				this->authenticate();
 				break;
 
-			case Worker::AwaitingRequest:
+			case Worker::AwaitingRequestState:
 				this->parseRequest();
 				break;
 
-			case Worker::RequestReceived:
-				this->m_state = Worker::FatalError;
+			case Worker::RequestReceivedState:
+				this->m_state = Worker::FatalErrorState;
 				break;
 
-			case Worker::ConnectionProxied:
+			case Worker::ConnectionProxiedState:
 				Q_ASSERT(this->m_target != 0);
 				this->m_target->write(this->m_buf);
 				this->m_target->flush();
 				this->m_buf.clear();
 				break;
 
-			case Worker::Error:
-			case Worker::FatalError:
+			case Worker::ErrorState:
+			case Worker::FatalErrorState:
 				Q_ASSERT(false);
 				break;
 		}
 	} while (cont);
 
-	if (this->m_state == Worker::FatalError) {
+	if (this->m_state == Worker::FatalErrorState) {
 		peer->close();
 	}
 }
@@ -78,8 +79,7 @@ void Worker::peerReadyReadHandler(void)
 void Worker::targetReadyReadHandler(void)
 {
 	QByteArray buf = this->m_target->readAll();
-	this->m_peer->write(buf);
-	this->m_peer->flush();
+	this->writeAndFlush(this->m_peer, buf);
 }
 
 void Worker::targetConnectedHandler(void)
@@ -97,7 +97,10 @@ void Worker::targetConnectedHandler(void)
 	} data;
 
 	QByteArray response("\x05\x00\x00", 3);
-	QHostAddress a = this->m_peer->peerAddress();
+	QHostAddress a;
+	if (qobject_cast<QAbstractSocket*>(this->m_peer)) {
+		a = (qobject_cast<QAbstractSocket*>(this->m_peer))->peerAddress();
+	}
 
 	if (a.protocol() == QAbstractSocket::IPv4Protocol) {
 		response.append('\x01');
@@ -113,48 +116,52 @@ void Worker::targetConnectedHandler(void)
 		Q_ASSERT(false);
 	}
 
-	data.port = qToBigEndian<quint16>(this->m_peer->peerPort());
+	if (qobject_cast<QAbstractSocket*>(this->m_peer)) {
+		data.port = qToBigEndian<quint16>((qobject_cast<QAbstractSocket*>(this->m_peer))->peerPort());
+	}
+	else {
+		data.port = 0;
+	}
+
 	response.append(QByteArray::fromRawData(&data.ptr, sizeof(data.port)));
 
 	QObject::connect(this->m_target, SIGNAL(readyRead()), this, SLOT(targetReadyReadHandler()));
 	QObject::connect(this->m_target, SIGNAL(disconnected()), this, SLOT(disconnectHandler()));
 
-	if (this->m_peer->write(response) == response.size()) {
-		this->m_peer->flush();
-		this->m_state = Worker::ConnectionProxied;
+	if (this->writeAndFlush(this->m_peer, response) == response.size()) {
+		this->m_state = Worker::ConnectionProxiedState;
 	}
 	else {
-		this->m_peer->abort();
-		this->m_state = Worker::FatalError;
+		this->m_peer->close();
+		this->m_state = Worker::FatalErrorState;
 	}
 }
 
 void Worker::targetConnectFailureHandler(QAbstractSocket::SocketError e)
 {
-	qDebug() << "Failed to connect to target:" << e;
 	char response[] = "\x05\x05\x00\x01\x00\x00\x00\x00\x00\x00"; // Connection refused
 	if (e != QAbstractSocket::ConnectionRefusedError) {
 		response[1] = '\x02'; // General failure
 	}
 
-	this->m_peer->write(response, 10);
-	this->m_peer->flush();
+	this->writeAndFlush(this->m_peer, response, 10);
 	this->m_peer->close();
-	this->m_state = Worker::FatalError;
+	this->m_state = Worker::FatalErrorState;
 }
 
 void Worker::disconnectHandler(void)
 {
+	Q_EMIT this->connectionClosed();
+	this->m_peer->disconnect();
 	this->m_peer->close();
 	this->m_peer->deleteLater();
-	this->m_peer->disconnect();
 
 	QObject::connect(this->m_peer, SIGNAL(destroyed()), this, SLOT(deleteLater()), Qt::QueuedConnection);
 
 	if (this->m_target) {
+		this->m_target->disconnect();
 		this->m_target->close();
 		this->m_target->deleteLater();
-		this->m_target->disconnect();
 	}
 }
 
@@ -167,21 +174,21 @@ bool Worker::readGreeting(void)
 			int len    = static_cast<quint8>(this->m_buf.at(1));
 
 			if (ver != 5 || !len) {
-				this->m_state = Worker::FatalError;
+				Q_EMIT this->error(Worker::ProtocolVersionMismatch);
+				this->m_state = Worker::FatalErrorState;
 				return false;
 			}
 
 			this->m_expected_length = 2 + len;
 		}
 	}
-
-	if (size > this->m_expected_length) {
-		this->m_state = Worker::FatalError;
+	else if (size > this->m_expected_length) {
+		this->m_state = Worker::FatalErrorState;
 		return false;
 	}
 
 	if (size == this->m_expected_length) {
-		this->m_state = Worker::GreetingReceived;
+		this->m_state = Worker::GreetingReceivedState;
 		return true;
 	}
 
@@ -193,22 +200,21 @@ void Worker::parseGreeting(void)
 	char response[] = "\x05\x02"; // Only password authentication accepted
 
 	if (-1 != this->m_buf.indexOf('\x00', 2)) {
-		this->m_state = Worker::AwaitingRequest; // Unsupported auth method
+		this->m_state = Worker::AwaitingRequestState; // Unsupported auth method
 		response[1]   = '\x00';
 	}
 	else if (-1 == this->m_buf.indexOf('\x02', 2)) {
-		this->m_state = Worker::Error; // Unsupported auth method
+		this->m_state = Worker::ErrorState; // Unsupported auth method
 		response[1]   = '\xFF';
 	}
 	else {
-		this->m_state = Worker::AwaitingAuthentication;
+		this->m_state = Worker::AwaitingAuthenticationState;
 	}
 
-	if (2 != this->m_peer->write(response, 2)) {
-		this->m_state = Worker::FatalError;
+	if (2 != this->writeAndFlush(this->m_peer, response, 2)) {
+		this->m_state = Worker::FatalErrorState;
 	}
 
-	this->m_peer->flush();
 	this->m_expected_length = -1;
 	this->m_buf.clear();
 }
@@ -226,14 +232,14 @@ void Worker::authenticate(void)
 			}
 
 			if (ver != 1) {
-				this->m_state = Worker::FatalError;
+				this->m_state = Worker::FatalErrorState;
 				return;
 			}
 		}
 	}
 
 	if (size > this->m_expected_length) {
-		this->m_state = Worker::FatalError;
+		this->m_state = Worker::FatalErrorState;
 		return;
 	}
 
@@ -244,18 +250,17 @@ void Worker::authenticate(void)
 
 	char response[] = "\x01\x00";
 	if (username != "repwatch" || password != "repwatch") {
-		this->m_state = Worker::Error;
+		this->m_state = Worker::ErrorState;
 		response[1] = '\xFF';
 	}
 	else {
-		this->m_state = Worker::AwaitingRequest;
+		this->m_state = Worker::AwaitingRequestState;
 	}
 
-	if (2 != this->m_peer->write(response, 2)) {
-		this->m_state = Worker::FatalError;
+	if (2 != this->writeAndFlush(this->m_peer, response, 2)) {
+		this->m_state = Worker::FatalErrorState;
 	}
 
-	this->m_peer->flush();
 	this->m_expected_length = -1;
 	this->m_buf.clear();
 }
@@ -270,7 +275,7 @@ void Worker::parseRequest(void)
 			quint8 atyp = static_cast<quint8>(this->m_buf.at(3));
 
 			if (ver != 5 || rsv != 0) {
-				this->m_state = Worker::FatalError;
+				this->m_state = Worker::FatalErrorState;
 				return;
 			}
 
@@ -288,14 +293,14 @@ void Worker::parseRequest(void)
 					break;
 
 				default:
-					this->m_state = Worker::FatalError;
+					this->m_state = Worker::FatalErrorState;
 					return;
 			}
 		}
 	}
 
 	if (size > this->m_expected_length) {
-		this->m_state = Worker::FatalError;
+		this->m_state = Worker::FatalErrorState;
 		return;
 	}
 
@@ -344,24 +349,42 @@ void Worker::parseRequest(void)
 
 	if (cmd != 1) { // Connect
 		char response[] = "\x05\x07\x00\x01\x00\x00\x00\x00\x00\x00"; // Command not supported
-		this->m_peer->write(response, 10);
-		this->m_peer->flush();
-		this->m_state = Worker::FatalError;
+		this->writeAndFlush(this->m_peer, response, 10);
+		this->m_state = Worker::FatalErrorState;
 		return;
 	}
 
 	this->m_connector = new SocketConnector(this);
-	if (!this->m_connector->createTcpSocket() || !this->m_connector->bindTo(this->m_peer->localAddress())) {
+	QHostAddress a;
+	if (qobject_cast<QAbstractSocket*>(this->m_peer)) {
+		a = (qobject_cast<QAbstractSocket*>(this->m_peer))->localAddress();
+	}
+
+	if (!this->m_connector->createTcpSocket() || (!a.isNull() && !this->m_connector->bindTo(a))) {
 		char response[] = "\x05\x01\x00\x01\x00\x00\x00\x00\x00\x00"; // General SOCKS server failure
-		this->m_peer->write(response, 10);
-		this->m_peer->flush();
-		this->m_state = Worker::FatalError;
+		this->writeAndFlush(this->m_peer, response, 10);
+		this->m_state = Worker::FatalErrorState;
 		return;
 	}
 
-	this->m_state = Worker::RequestReceived;
+	this->m_state = Worker::RequestReceivedState;
 	QObject::connect(this->m_connector, SIGNAL(connected()), this, SLOT(targetConnectedHandler()));
 	QObject::connect(this->m_connector, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(targetConnectFailureHandler(QAbstractSocket::SocketError)));
-	qDebug() << address << port;
 	this->m_connector->connectToHost(address, port);
+}
+
+qint64 Worker::writeAndFlush(QIODevice* device, const char* buf, int size)
+{
+	qint64 res = device->write(buf, size);
+	QAbstractSocket* sock = qobject_cast<QAbstractSocket*>(device);
+	if (sock) {
+		sock->flush();
+	}
+
+	return res;
+}
+
+qint64 Worker::writeAndFlush(QIODevice* device, const QByteArray& buf)
+{
+	return this->writeAndFlush(device, buf.constData(), buf.size());
 }

@@ -24,7 +24,10 @@ private Q_SLOTS:
 	void cleanupTestCase(void);
 	void init(void);
 	void cleanup(void);
+
 	void testGreeting(void);
+	void testGreetingProtocolFailure1(void);
+	void testGreetingProtocolFailure2(void);
 };
 
 #endif // WORKERTEST_H

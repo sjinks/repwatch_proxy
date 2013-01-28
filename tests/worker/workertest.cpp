@@ -143,7 +143,7 @@ void WorkerTest::testGreetingProtocolFailure2(void)
 	QCOMPARE(spy.first().at(0), QVariant::fromValue(Worker::UnknownError));
 }
 
-void WorkerTest::testTooMuchData(void)
+void WorkerTest::testGreetingTooMuchData(void)
 {
 	QSignalSpy spy(this->worker, SIGNAL(error(Worker::Error)));
 
@@ -179,4 +179,22 @@ void WorkerTest::testNoAuthFailure(void)
 	QCOMPARE(buf.size(), 2);
 	QCOMPARE(buf.at(0), '\x05');
 	QVERIFY(buf.at(1) != '\x00');
+}
+
+void WorkerTest::testUnsupportedAuthMethod(void)
+{
+	QSignalSpy spy(this->worker, SIGNAL(error(Worker::Error)));
+
+	this->writeData(QByteArray("\x05\x01\xFF", 3));
+	QCOMPARE(this->worker->m_state, Worker::ErrorState);
+
+	QByteArray buf;
+	QVERIFY(this->input->seek(3));
+	buf = this->input->readAll();
+	QCOMPARE(buf.size(), 2);
+	QCOMPARE(buf.at(0), '\x05');
+	QCOMPARE(buf.at(1), '\xFF');
+
+	QCOMPARE(spy.count(), 1);
+	QCOMPARE(spy.first().at(0), QVariant::fromValue(Worker::UnsupportedAuthMethod));
 }

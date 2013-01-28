@@ -225,17 +225,44 @@ bool Worker::readGreeting(void)
 	return false;
 }
 
+/**
+ * @see http://tools.ietf.org/html/rfc1928
+ *
+ * The server selects from one of the methods given in METHODS, and
+ * sends a METHOD selection message:
+ *
+ *                    +----+--------+
+ *                    |VER | METHOD |
+ *                    +----+--------+
+ *                    | 1  |   1    |
+ *                    +----+--------+
+ *
+ * If the selected METHOD is X'FF', none of the methods listed by the
+ * client are acceptable, and the client MUST close the connection.
+ *
+ * The values currently defined for METHOD are:
+ *
+ *        o  X'00' NO AUTHENTICATION REQUIRED
+ *        o  X'01' GSSAPI
+ *        o  X'02' USERNAME/PASSWORD
+ *        o  X'03' to X'7F' IANA ASSIGNED
+ *        o  X'80' to X'FE' RESERVED FOR PRIVATE METHODS
+ *        o  X'FF' NO ACCEPTABLE METHODS
+ *
+ * The client and server then enter a method-specific sub-negotiation.
+ */
 void Worker::parseGreeting(void)
 {
 	char response[] = "\x05\x02"; // Only password authentication accepted
 
 	if (this->m_noauth_allowed && -1 != this->m_buf.indexOf('\x00', 2)) {
 		this->m_state = Worker::AwaitingRequestState;
-		response[1]   = '\x00';
+		response[1]   = '\x00'; // Successfully authenticated
 	}
 	else if (-1 == this->m_buf.indexOf('\x02', 2)) {
 		this->m_state = Worker::ErrorState; // Unsupported auth method
 		response[1]   = '\xFF';
+		Q_EMIT this->error(Worker::UnsupportedAuthMethod);
 	}
 	else {
 		this->m_state = Worker::AwaitingAuthenticationState;
@@ -243,6 +270,7 @@ void Worker::parseGreeting(void)
 
 	if (2 != this->writeAndFlush(this->m_peer, response, 2)) {
 		this->m_state = Worker::FatalErrorState;
+		Q_EMIT this->error(Worker::IOError);
 	}
 
 	this->m_expected_length = -1;

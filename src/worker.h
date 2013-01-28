@@ -18,6 +18,8 @@ public:
 		NoError,
 		ProtocolVersionMismatch,
 		TooMuchData,
+		UnsupportedAuthMethod,
+		IOError,
 		UnknownError
 	};
 

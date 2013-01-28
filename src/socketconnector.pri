@@ -1,6 +1,7 @@
 HEADERS += \
 	$$PWD/../libs/qt_socketconnector/src/socketconnector.h \
-	$$PWD/../libs/qt_socketconnector/src/socketconnector_p.h
+	$$PWD/../libs/qt_socketconnector/src/socketconnector_p.h \
+	$$PWD/../libs/qt_socketconnector/src/qt4compat.h
 
 SOURCES += \
 	$$PWD/../libs/qt_socketconnector/src/socketconnector.cpp \

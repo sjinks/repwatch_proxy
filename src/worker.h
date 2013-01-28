@@ -16,7 +16,8 @@ public:
 
 	enum Error {
 		NoError,
-		ProtocolVersionMismatch
+		ProtocolVersionMismatch,
+		UnknownError
 	};
 
 private Q_SLOTS:

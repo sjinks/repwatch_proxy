@@ -5,6 +5,8 @@
 #include "workertest.h"
 #include "worker.h"
 
+Q_DECLARE_METATYPE(Worker::Error)
+
 WorkerTest::WorkerTest(void)
 	: input(0), worker(0)
 {
@@ -93,6 +95,8 @@ void WorkerTest::testGreeting(void)
 
 void WorkerTest::testGreetingProtocolFailure1(void)
 {
+	QSignalSpy spy(this->worker, SIGNAL(error(Worker::Error)));
+
 	this->writeData("\x01");
 	QVERIFY(!this->worker->m_target);
 	QVERIFY(!this->worker->m_connector);
@@ -104,10 +108,15 @@ void WorkerTest::testGreetingProtocolFailure1(void)
 	QVERIFY(!this->worker->m_connector);
 	QCOMPARE(this->worker->m_buf.size(), 2);
 	QCOMPARE(this->worker->m_state, Worker::FatalErrorState);
+
+	QCOMPARE(spy.count(), 1);
+	QCOMPARE(spy.first().at(0), QVariant::fromValue(Worker::ProtocolVersionMismatch));
 }
 
 void WorkerTest::testGreetingProtocolFailure2(void)
 {
+	QSignalSpy spy(this->worker, SIGNAL(error(Worker::Error)));
+
 	this->writeData("\x05");
 	QVERIFY(!this->worker->m_target);
 	QVERIFY(!this->worker->m_connector);
@@ -119,4 +128,7 @@ void WorkerTest::testGreetingProtocolFailure2(void)
 	QVERIFY(!this->worker->m_connector);
 	QCOMPARE(this->worker->m_buf.size(), 2);
 	QCOMPARE(this->worker->m_state, Worker::FatalErrorState);
+
+	QCOMPARE(spy.count(), 1);
+	QCOMPARE(spy.first().at(0), QVariant::fromValue(Worker::UnknownError));
 }

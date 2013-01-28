@@ -12,6 +12,10 @@ Worker::Worker(QIODevice* peer, QObject* parent)
 {
 	QObject::connect(this->m_peer, SIGNAL(readyRead()), this, SLOT(peerReadyReadHandler()));
 	QObject::connect(this->m_peer, SIGNAL(aboutToClose()), this, SLOT(disconnectHandler()));
+
+	if (qobject_cast<QAbstractSocket*>(this->m_peer)) {
+		QObject::connect(this->m_peer, SIGNAL(disconnected()), this, SLOT(disconnectHandler()));
+	}
 }
 
 Worker::~Worker(void)
@@ -173,8 +177,14 @@ bool Worker::readGreeting(void)
 			quint8 ver = static_cast<quint8>(this->m_buf.at(0));
 			int len    = static_cast<quint8>(this->m_buf.at(1));
 
-			if (ver != 5 || !len) {
+			if (ver != 5) {
 				Q_EMIT this->error(Worker::ProtocolVersionMismatch);
+				this->m_state = Worker::FatalErrorState;
+				return false;
+			}
+
+			if (!len) {
+				Q_EMIT this->error(Worker::UnknownError);
 				this->m_state = Worker::FatalErrorState;
 				return false;
 			}

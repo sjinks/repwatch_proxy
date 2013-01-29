@@ -36,6 +36,7 @@ private Q_SLOTS:
 	void targetConnectedHandler(void);
 	void targetConnectFailureHandler(QAbstractSocket::SocketError e);
 	void disconnectHandler(void);
+	void peerErrorHandler(QAbstractSocket::SocketError e);
 
 Q_SIGNALS:
 	void connectionClosed(void);

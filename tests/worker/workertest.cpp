@@ -89,6 +89,7 @@ void WorkerTest::testGreeting(void)
 
 	QSignalSpy spy(this->worker, SIGNAL(connectionClosed()));
 	QSignalSpy spy2(this->input, SIGNAL(destroyed()));
+
 	this->input->close();
 	QCOMPARE(spy.count(), 1);
 

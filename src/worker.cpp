@@ -1,5 +1,7 @@
+#include <QDebug>
 #include <QtCore/QtEndian>
 #include <QtCore/QIODevice>
+#include <QtCore/QTimer>
 #include <QtNetwork/QHostAddress>
 #include <QtNetwork/QTcpSocket>
 #include "socketconnector.h"
@@ -13,15 +15,19 @@ Worker::Worker(QIODevice* peer, QObject* parent)
 	  m_noauth_allowed(false)
 {
 	QObject::connect(this->m_peer, SIGNAL(readyRead()), this, SLOT(peerReadyReadHandler()));
-	QObject::connect(this->m_peer, SIGNAL(aboutToClose()), this, SLOT(disconnectHandler()));
 
 	if (qobject_cast<QAbstractSocket*>(this->m_peer)) {
 		QObject::connect(this->m_peer, SIGNAL(disconnected()), this, SLOT(disconnectHandler()));
+		QObject::connect(this->m_peer, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(peerErrorHandler(QAbstractSocket::SocketError)));
+	}
+	else {
+		QObject::connect(this->m_peer, SIGNAL(aboutToClose()), this, SLOT(disconnectHandler()));
 	}
 }
 
 Worker::~Worker(void)
 {
+	qDebug("-%p", this);
 }
 
 void Worker::peerReadyReadHandler(void)
@@ -159,17 +165,22 @@ void Worker::targetConnectFailureHandler(QAbstractSocket::SocketError e)
 void Worker::disconnectHandler(void)
 {
 	Q_EMIT this->connectionClosed();
-	this->m_peer->disconnect(this);
-	this->m_peer->close();
-	this->m_peer->deleteLater();
 
-	QObject::connect(this->m_peer, SIGNAL(destroyed()), this, SLOT(deleteLater()), Qt::QueuedConnection);
+	this->m_peer->disconnect(this);
+	this->m_peer->deleteLater();
 
 	if (this->m_target) {
 		this->m_target->disconnect(this);
-		this->m_target->close();
 		this->m_target->deleteLater();
 	}
+
+	QObject::connect(this->m_peer, SIGNAL(destroyed()), this, SLOT(deleteLater()), Qt::QueuedConnection);
+}
+
+void Worker::peerErrorHandler(QAbstractSocket::SocketError e)
+{
+	Q_UNUSED(e)
+	this->disconnectHandler();
 }
 
 /**

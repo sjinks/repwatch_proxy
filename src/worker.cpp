@@ -4,6 +4,7 @@
 #include <QtNetwork/QTcpSocket>
 #include "socketconnector.h"
 #include "worker.h"
+#include "qt4compat.h"
 
 Worker::Worker(QIODevice* peer, QObject* parent)
 	: QObject(parent),

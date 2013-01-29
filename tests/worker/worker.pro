@@ -8,14 +8,14 @@ DESTDIR  = ../../bin
 
 lessThan(QT_MAJOR_VERSION, 5): CONFIG += qtestlib
 
+HEADERS = \
+	workertest.h \
+	$$PWD/../../src/worker.h
+
 SOURCES = \
 	tst_workertest.cpp \
 	workertest.cpp \
 	$$PWD/../../src/worker.cpp
-
-HEADERS = \
-	workertest.h \
-	$$PWD/../../src/worker.h
 
 include(../../src/socketconnector.pri)
 

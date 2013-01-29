@@ -1,5 +1,6 @@
 #include <QtCore/QBuffer>
 #include <QtCore/QCoreApplication>
+#include <QtCore/QPointer>
 #include <QtCore/QVariant>
 #include <QtTest/QSignalSpy>
 #include <QtTest/QTest>

@@ -87,7 +87,7 @@ void MyApplication::newConnectionHandler(void)
 		QTcpSocket* socket = server->nextPendingConnection();
 		Q_ASSERT(socket != 0);
 
-		qDebug("New connection");
-		new Worker(socket, this);
+		Worker* w = new Worker(socket, this);
+		w->setNoauthAllowed(true);
 	}
 }

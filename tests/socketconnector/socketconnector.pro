@@ -20,3 +20,5 @@ HEADERS = \
 
 INCLUDEPATH += $$PWD/../../libs/qt_socketconnector/src/
 DEPENDPATH  += $$PWD/../../libs/qt_socketconnector/src/
+
+*g++*:equals(QT_MAJOR_VERSION, 4):equals(QT_MINOR_VERSION, 2): QMAKE_CXXFLAGS += -Wno-ignored-qualifiers

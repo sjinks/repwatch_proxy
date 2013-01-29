@@ -35,3 +35,5 @@ else {
 
 INCLUDEPATH += $$PWD/../../libs/qt_signalwatcher/src/
 DEPENDPATH  += $$PWD/../../libs/qt_signalwatcher/src/
+
+*g++*:equals(QT_MAJOR_VERSION, 4):equals(QT_MINOR_VERSION, 2): QMAKE_CXXFLAGS += -Wno-ignored-qualifiers

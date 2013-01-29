@@ -91,6 +91,7 @@ void WorkerTest::testGreeting(void)
 	QSignalSpy spy2(this->input, SIGNAL(destroyed()));
 
 	this->input->close();
+	QCoreApplication::processEvents();
 	QCOMPARE(spy.count(), 1);
 
 	QVERIFY(!b.isNull());
@@ -102,6 +103,9 @@ void WorkerTest::testGreeting(void)
 	QCOMPARE(spy2.count(), 1);
 
 	QCoreApplication::processEvents();
+#if QT_VERSION < 0x050000
+	QCoreApplication::processEvents(QEventLoop::DeferredDeletion);
+#endif
 	QVERIFY(w.isNull());
 	this->worker = 0;
 }

@@ -5,7 +5,7 @@ int main(int argc, char** argv)
 {
 #if QT_VERSION >= 0x050000
 	QCoreApplication::setEventDispatcher(new EventDispatcherLibEvent());
-#elif QT_VERSION >= 0x040600
+#elif QT_VERSION >= 0x040500
 	EventDispatcherLibEvent e;
 #endif
 

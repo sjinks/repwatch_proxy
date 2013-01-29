@@ -122,7 +122,8 @@ void WorkerTest::testGreetingProtocolFailure1(void)
 	QCOMPARE(this->worker->m_state, Worker::FatalErrorState);
 
 	QCOMPARE(spy.count(), 1);
-	QCOMPARE(spy.first().at(0), QVariant::fromValue(Worker::ProtocolVersionMismatch));
+	QVariantList args = spy.takeFirst();
+	QCOMPARE(qvariant_cast<Worker::Error>(args.at(0)), Worker::ProtocolVersionMismatch);
 }
 
 void WorkerTest::testGreetingProtocolFailure2(void)
@@ -142,7 +143,8 @@ void WorkerTest::testGreetingProtocolFailure2(void)
 	QCOMPARE(this->worker->m_state, Worker::FatalErrorState);
 
 	QCOMPARE(spy.count(), 1);
-	QCOMPARE(spy.first().at(0), QVariant::fromValue(Worker::UnknownError));
+	QVariantList args = spy.takeFirst();
+	QCOMPARE(qvariant_cast<Worker::Error>(args.at(0)), Worker::UnknownError);
 }
 
 void WorkerTest::testGreetingTooMuchData(void)
@@ -152,7 +154,8 @@ void WorkerTest::testGreetingTooMuchData(void)
 	this->writeData("\x05\x01\x01\x01");
 	QCOMPARE(this->worker->m_state, Worker::FatalErrorState);
 	QCOMPARE(spy.count(), 1);
-	QCOMPARE(spy.first().at(0), QVariant::fromValue(Worker::TooMuchData));
+	QVariantList args = spy.takeFirst();
+	QCOMPARE(qvariant_cast<Worker::Error>(args.at(0)), Worker::TooMuchData);
 }
 
 void WorkerTest::testNoAuthSuccess(void)
@@ -198,7 +201,8 @@ void WorkerTest::testUnsupportedAuthMethod(void)
 	QCOMPARE(buf.at(1), '\xFF');
 
 	QCOMPARE(spy.count(), 1);
-	QCOMPARE(spy.first().at(0), QVariant::fromValue(Worker::UnsupportedAuthMethod));
+	QVariantList args = spy.takeFirst();
+	QCOMPARE(qvariant_cast<Worker::Error>(args.at(0)), Worker::UnsupportedAuthMethod);
 }
 
 void WorkerTest::testAuthTooMuchData(void)
@@ -219,7 +223,8 @@ void WorkerTest::testAuthTooMuchData(void)
 	this->writeData("\x01\x01\x50\x01\x50\xFF");
 	QCOMPARE(this->worker->m_state, Worker::FatalErrorState);
 	QCOMPARE(spy.count(), 1);
-	QCOMPARE(spy.first().at(0), QVariant::fromValue(Worker::TooMuchData));
+	QVariantList args = spy.takeFirst();
+	QCOMPARE(qvariant_cast<Worker::Error>(args.at(0)), Worker::TooMuchData);
 }
 
 void WorkerTest::testAuthBadVersion(void)
@@ -240,7 +245,8 @@ void WorkerTest::testAuthBadVersion(void)
 	this->writeData("\xFF\x01\x50");
 	QCOMPARE(this->worker->m_state, Worker::FatalErrorState);
 	QCOMPARE(spy.count(), 1);
-	QCOMPARE(spy.first().at(0), QVariant::fromValue(Worker::ProtocolVersionMismatch));
+	QVariantList args = spy.takeFirst();
+	QCOMPARE(qvariant_cast<Worker::Error>(args.at(0)), Worker::ProtocolVersionMismatch);
 }
 
 void WorkerTest::testRejectAuth(void)

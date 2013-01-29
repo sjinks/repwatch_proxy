@@ -323,7 +323,7 @@ void WorkerTest::testAcceptAuth(void)
 	QCOMPARE(buf.at(1), '\x00');
 }
 
-void WorkerTest::testZeroLengthAuth()
+void WorkerTest::testZeroLengthAuth(void)
 {
 	QSignalSpy spy(this->worker, SIGNAL(authenticateRequest(QByteArray,QByteArray)));
 

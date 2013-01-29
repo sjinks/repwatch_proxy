@@ -1,6 +1,6 @@
 QT      += testlib
 QT      -= gui
-TARGET   = tst_signalwatchert
+TARGET   = tst_signalwatcher
 CONFIG  += console
 CONFIG  -= app_bundle
 TEMPLATE = app
@@ -36,4 +36,4 @@ else {
 INCLUDEPATH += $$PWD/../../libs/qt_signalwatcher/src/
 DEPENDPATH  += $$PWD/../../libs/qt_signalwatcher/src/
 
-*g++*:equals(QT_MAJOR_VERSION, 4):equals(QT_MINOR_VERSION, 2): QMAKE_CXXFLAGS += -Wno-ignored-qualifiers
+*g++*:equals(QT_MAJOR_VERSION, 4):lessThan(QT_MINOR_VERSION, 5): QMAKE_CXXFLAGS += -Wno-ignored-qualifiers

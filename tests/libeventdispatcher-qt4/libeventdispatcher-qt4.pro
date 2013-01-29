@@ -5,8 +5,12 @@ SUBDIRS = \
 	qeventloop \
 	qtimer
 
-# qsocketnotifier test may heavily depend on the Qt version
-
-equals(QT_MAJOR_VERSION, 4):greaterThan(QT_MINOR_VERSION, 6) {
+# Benchmarks appeared in Qt 4.6
+greaterThan(QT_MINOR_VERSION, 5) {
 	SUBDIRS += events
+}
+
+# qsocketnotifier depends on Qt 4.8's privates
+greaterThan(QT_MINOR_VERSION, 7) {
+	SUBDIRS += qsocketnotifier
 }

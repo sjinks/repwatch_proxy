@@ -26,6 +26,8 @@ SOURCES += \
 
 DEFINES += REPWATCHPROXY_VERSION=$$VERSION
 
+*g++*:equals(QT_MAJOR_VERSION, 4):equals(QT_MINOR_VERSION, 2): QMAKE_CXXFLAGS += -Wno-ignored-qualifiers
+
 include(libeventdispatcher.pri)
 include(socketconnector.pri)
 include(signalwatcher.pri)

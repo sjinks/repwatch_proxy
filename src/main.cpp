@@ -1,8 +1,15 @@
 #include "myapplication.h"
 #include "eventdispatcher_libevent.h"
+#include "msghandler.h"
 
 int main(int argc, char** argv)
 {
+#if QT_VERSION < 0x050000
+	qInstallMsgHandler(messageHandler);
+#else
+	qInstallMessageHandler(messageHandler);
+#endif
+
 #if QT_VERSION >= 0x050000
 	QCoreApplication::setEventDispatcher(new EventDispatcherLibEvent());
 #else

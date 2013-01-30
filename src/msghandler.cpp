@@ -98,7 +98,7 @@ void messageHandler(QtMsgType type, const QMessageLogContext& context, const QSt
 	fprintf(stderr, "%s", message.constData());
 	fflush(stderr);
 
-	syslog(level, "%s", message.constData());
+//	syslog(level, "%s", message.constData());
 
 	if (QtFatalMsg == type) {
 		termination_handler();

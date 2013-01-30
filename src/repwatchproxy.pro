@@ -17,12 +17,19 @@ DEFINES *= \
 
 HEADERS += \
 	myapplication.h \
+	msghandler.h \
 	worker.h
 
 SOURCES += \
 	main.cpp \
+	msghandler.cpp \
 	myapplication.cpp \
 	worker.cpp
+
+win32 {
+	HEADERS += win_syslog.h
+	SOURCES += win_syslog.cpp
+}
 
 DEFINES += REPWATCHPROXY_VERSION=$$VERSION
 

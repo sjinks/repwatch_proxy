@@ -1,4 +1,3 @@
-#include <QDebug>
 #include <QtCore/QtEndian>
 #include <QtCore/QIODevice>
 #include <QtCore/QTimer>
@@ -344,7 +343,12 @@ void Worker::authenticate(void)
 		this->m_expected_length = -1;
 		this->m_buf.clear();
 
-		Q_EMIT this->authenticateRequest(username, password);
+		if (this->m_noauth_allowed && username.isEmpty() && password.isEmpty()) {
+			this->acceptAuthentication();
+		}
+		else {
+			Q_EMIT this->authenticateRequest(username, password);
+		}
 	}
 }
 

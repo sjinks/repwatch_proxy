@@ -4,7 +4,9 @@ HEADERS += \
 	$$PWD/../../libs/qt_eventdispatcher_libevent/src/eventdispatcher_libevent.h \
 	$$PWD/../../libs/qt_eventdispatcher_libevent/src/eventdispatcher_libevent_p.h \
 	$$PWD/../../libs/qt_eventdispatcher_libevent/src/libevent2-emul.h \
-	$$PWD/../../libs/qt_eventdispatcher_libevent/src/qt4compat.h
+	$$PWD/../../libs/qt_eventdispatcher_libevent/src/qt4compat.h \
+	$$PWD/../../libs/qt_eventdispatcher_libevent/src/tco.h \
+	$$PWD/../../libs/qt_eventdispatcher_libevent/src/tco_impl.h
 
 SOURCES += \
 	$$PWD/../../libs/qt_eventdispatcher_libevent/src/eventdispatcher_libevent_config.cpp \
@@ -17,6 +19,13 @@ INCLUDEPATH += $$PWD/../../libs/qt_eventdispatcher_libevent/src/
 DEPENDPATH  += $$PWD/../../libs/qt_eventdispatcher_libevent/src/
 
 unix {
+	system('cc -E $$PWD/../../libs/qt_eventdispatcher_libevent/src/conftests/eventfd.h -o /dev/null 2> /dev/null') {
+		SOURCES += $$PWD/../../libs/qt_eventdispatcher_libevent/src/tco_eventfd.cpp
+	}
+	else {
+		SOURCES += $$PWD/../../libs/qt_eventdispatcher_libevent/src/tco_pipe.cpp
+	}
+
 	system('pkg-config --exists libevent') {
 		CONFIG    += link_pkgconfig
 		PKGCONFIG += libevent

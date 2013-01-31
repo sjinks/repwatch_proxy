@@ -538,7 +538,13 @@ void Worker::parseRequest(void)
 
 		case 3: {
 			int len = static_cast<quint8>(this->m_buf.at(4));
-			QByteArray tmp = QByteArray::fromRawData(this->m_buf.constData() + 5, len);
+			QByteArray tmp = QByteArray(this->m_buf.constData() + 5, len);
+
+			if (tmp.endsWith('.')) {
+				tmp.chop(1);
+				--len;
+			}
+
 			address = QString::fromLocal8Bit(tmp.constData(), len);
 			memcpy(&port, this->m_buf.constData() + this->m_expected_length - 2, sizeof(quint16));
 			break;

@@ -63,27 +63,27 @@ void messageHandler(QtMsgType type, const char* msg)
 void messageHandler(QtMsgType type, const QMessageLogContext& context, const QString& msg)
 {
 	QString severity;
-	int level = LOG_DEBUG;
+//	int level = LOG_DEBUG;
 
 	switch (type) {
 		case QtDebugMsg:
 			severity = QLatin1String("Debug");
-			level = LOG_DEBUG;
+//			level = LOG_DEBUG;
 			break;
 
 		case QtWarningMsg:
 			severity = QLatin1String("Warning");
-			level = LOG_WARNING;
+//			level = LOG_WARNING;
 			break;
 
 		case QtCriticalMsg:
 			severity = QLatin1String("Error");
-			level = LOG_ERR;
+//			level = LOG_ERR;
 			break;
 
 		case QtFatalMsg:
 			severity = QLatin1String("Fatal");
-			level = LOG_CRIT;
+//			level = LOG_CRIT;
 	}
 
 #ifdef DEBUG

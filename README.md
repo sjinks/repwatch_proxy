@@ -12,9 +12,7 @@
 yum install qt4-devel libevent-devel gcc gcc-c++ git
 git clone --quiet --branch=master git://github.com/sjinks/repwatch_proxy.git repwatch_proxy
 cd repwatch_proxy
-git submodule init
-git submodule update
 git submodule update --init --recursive
-qmake
+/usr/lib64/qt4/bin/qmake -recursive
 make
 ```

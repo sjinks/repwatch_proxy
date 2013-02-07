@@ -19,7 +19,5 @@ SOURCES = \
 
 include(../../src/socketconnector.pri)
 
-*g++*:equals(QT_MAJOR_VERSION, 4):lessThan(QT_MINOR_VERSION, 5): QMAKE_CXXFLAGS += -Wno-ignored-qualifiers
-
 INCLUDEPATH += $$PWD/../../src
 DEPENDPATH  += $$PWD/../../src

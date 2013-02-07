@@ -49,6 +49,4 @@ else {
 	LIBS += -levent_core
 }
 
-*g++*:equals(QT_MAJOR_VERSION, 4):lessThan(QT_MINOR_VERSION, 5): QMAKE_CXXFLAGS += -Wno-ignored-qualifiers
-
 lessThan(QT_MAJOR_VERSION, 5): CONFIG += qtestlib

@@ -1,4 +1,5 @@
 HEADERS += \
+	$$PWD/../../libs/qt_eventdispatcher_libevent/src/common.h \
 	$$PWD/../../libs/qt_eventdispatcher_libevent/src/eventdispatcher_libevent_config.h \
 	$$PWD/../../libs/qt_eventdispatcher_libevent/src/eventdispatcher_libevent_config_p.h \
 	$$PWD/../../libs/qt_eventdispatcher_libevent/src/eventdispatcher_libevent.h \
@@ -17,6 +18,9 @@ SOURCES += \
 
 INCLUDEPATH += $$PWD/../../libs/qt_eventdispatcher_libevent/src/
 DEPENDPATH  += $$PWD/../../libs/qt_eventdispatcher_libevent/src/
+
+HEADERS     += $$PWD/../../libs/qt_eventdispatcher_libevent/tests/eventdispatcher.h
+INCLUDEPATH += $$PWD/../../libs/qt_eventdispatcher_libevent/tests/
 
 unix {
 	system('cc -E $$PWD/../../libs/qt_eventdispatcher_libevent/src/conftests/eventfd.h -o /dev/null 2> /dev/null') {
@@ -47,4 +51,10 @@ unix {
 }
 else {
 	LIBS += -levent_core
+}
+
+win32 {
+	SOURCES += $$PWD/../../libs/qt_eventdispatcher_libevent/src/tco_win32_libevent.cpp
+	HEADERS += $$PWD/../../libs/qt_eventdispatcher_libevent/src/wsainit.h
+	LIBS    += -lws2_32
 }

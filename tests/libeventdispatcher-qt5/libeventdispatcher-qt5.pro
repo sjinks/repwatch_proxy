@@ -7,4 +7,3 @@ SUBDIRS = \
 	qsocketnotifier \
 	events \
 	issues
-

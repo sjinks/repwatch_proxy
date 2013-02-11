@@ -1,4 +1,5 @@
 HEADERS += \
+	$$PWD/../libs/qt_eventdispatcher_libevent/src/common.h \
 	$$PWD/../libs/qt_eventdispatcher_libevent/src/eventdispatcher_libevent.h \
 	$$PWD/../libs/qt_eventdispatcher_libevent/src/eventdispatcher_libevent_p.h \
 	$$PWD/../libs/qt_eventdispatcher_libevent/src/eventdispatcher_libevent_config.h \
@@ -43,7 +44,13 @@ unix {
 	}
 }
 else {
-	LIBS += -levent
+	LIBS += -levent_core
+}
+
+win32 {
+	SOURCES += $$PWD/../libs/qt_eventdispatcher_libevent/src/tco_win32_libevent.cpp
+	HEADERS += $$PWD/../libs/qt_eventdispatcher_libevent/src/wsainit.h
+	LIBS    += -lws2_32
 }
 
 INCLUDEPATH += $$PWD/../libs/qt_eventdispatcher_libevent/src

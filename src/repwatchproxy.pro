@@ -40,6 +40,11 @@ unix {
 		HEADERS += pamauthenticator.h
 		LIBS    += -lpam
 	}
+
+	system('c++ $$PWD/conftests/libwrap.cpp -lwrap -o /dev/null 2> /dev/null') {
+		DEFINES += HAVE_LIBWRAP
+		LIBS    += -lwrap
+	}
 }
 
 include(libeventdispatcher.pri)

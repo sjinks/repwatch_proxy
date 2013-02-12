@@ -12,6 +12,10 @@
 #include "pamauthenticator.h"
 #endif
 
+#ifdef HAVE_LIBWRAP
+#include <tcpd.h>
+#endif
+
 MyApplication::MyApplication(int &argc, char **argv)
 	: QCoreApplication(argc, argv), m_settings(0), m_servers()
 {
@@ -131,4 +135,53 @@ void MyApplication::authenticateRequest(const QByteArray& username, const QByteA
 #endif
 
 	w->acceptAuthentication();
+}
+
+bool MyApplication::checkAccess(const QHostAddress& remote)
+{
+	bool result = false;
+
+#ifdef HAVE_LIBWRAP
+	int use_libwrap = this->m_settings->value(QLatin1String("access/use_libwrap"), 0).toInt();
+	if (use_libwrap != 1) {
+		use_libwrap = 0;
+	}
+
+	if (use_libwrap) {
+		char* orig_hosts_allow_table = hosts_allow_table;
+		char* orig_hosts_deny_table  = hosts_deny_table;
+
+		QByteArray allow_file  = this->m_settings->value(QLatin1String("libwrap/allow_file")).toByteArray();
+		QByteArray deny_file   = this->m_settings->value(QLatin1String("libwrap/deny_file")).toByteArray();
+		QByteArray daemon_name = this->m_settings->value(QLatin1String("libwrap/daemon_name")).toByteArray();
+
+		if (!allow_file.isEmpty()) {
+			hosts_allow_table = allow_file.data();
+		}
+
+		if (!deny_file.isEmpty()) {
+			hosts_deny_table = deny_file.data();
+		}
+
+		if (daemon_name.isEmpty()) {
+			daemon_name = "repwatchproxy";
+		}
+
+		QByteArray ip = remote.toString().toLatin1();
+
+		char client_name[] = "";
+		char client_user[] = "";
+		int res = hosts_ctl(daemon_name.data(), client_name, ip.data(), client_user);
+
+		hosts_allow_table = orig_hosts_allow_table;
+		hosts_deny_table  = orig_hosts_deny_table;
+
+		if (!res) {
+			qDebug("Access from %s forbidden by libwrap", ip.constData());
+			return false;
+		}
+	}
+#endif
+
+	return result;
 }

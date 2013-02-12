@@ -4,6 +4,7 @@
 #include <QtCore/QCoreApplication>
 #include <QtCore/QList>
 
+class QHostAddress;
 class QSettings;
 class QTcpServer;
 
@@ -22,6 +23,8 @@ private Q_SLOTS:
 private:
 	QSettings* m_settings;
 	QList<QTcpServer*> m_servers;
+
+	bool checkAccess(const QHostAddress& remote);
 };
 
 #endif // MYAPPLICATION_H

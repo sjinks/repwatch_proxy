@@ -1,13 +1,14 @@
 #ifndef PAMAUTHENTICATOR_H
 #define PAMAUTHENTICATOR_H
 
-#include <QtCore/QByteArray>
+#include <QtCore/QObject>
 #include <security/pam_appl.h>
 
-class PAMAuthenticator {
+class PAMAuthenticator : public QObject {
+	Q_OBJECT
 public:
-	PAMAuthenticator(const QByteArray& username, const QByteArray& password, const QByteArray& host);
-	~PAMAuthenticator(void);
+	PAMAuthenticator(const QByteArray& username, const QByteArray& password, const QByteArray& host, QObject* parent = 0);
+	virtual ~PAMAuthenticator(void);
 
 	bool authenticate(void);
 

@@ -3,8 +3,8 @@
 #include "qt4compat.h"
 #include "pamauthenticator.h"
 
-PAMAuthenticator::PAMAuthenticator(const QByteArray& username, const QByteArray& password, const QByteArray& host)
-	: m_ph(0), m_user(username), m_pass(password), m_host(host)
+PAMAuthenticator::PAMAuthenticator(const QByteArray& username, const QByteArray& password, const QByteArray& host, QObject* parent)
+	: QObject(parent), m_ph(0), m_user(username), m_pass(password), m_host(host)
 {
 }
 

@@ -9,7 +9,7 @@
 ## Install on CentOS
 
 ```bash
-yum install qt4-devel libevent-devel gcc gcc-c++ git
+yum install qt4-devel libevent-devel gcc gcc-c++ git pam-devel tcp_wrappers
 git clone --quiet --branch=master git://github.com/sjinks/repwatch_proxy.git repwatch_proxy
 cd repwatch_proxy
 git submodule update --init --recursive

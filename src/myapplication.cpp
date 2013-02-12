@@ -8,6 +8,10 @@
 #include "signalwatcher.h"
 #include "worker.h"
 
+#ifdef HAVE_PAM
+#include "pamauthenticator.h"
+#endif
+
 MyApplication::MyApplication(int &argc, char **argv)
 	: QCoreApplication(argc, argv), m_settings(0), m_servers()
 {
@@ -88,6 +92,30 @@ void MyApplication::newConnectionHandler(void)
 		Q_ASSERT(socket != 0);
 
 		Worker* w = new Worker(socket, this);
-		w->setNoauthAllowed(true);
+//		w->setNoauthAllowed(true);
+		QObject::connect(w, SIGNAL(authenticateRequest(QByteArray,QByteArray,QByteArray)), this, SLOT(authenticateRequest(QByteArray,QByteArray,QByteArray)));
 	}
+}
+
+void MyApplication::authenticateRequest(const QByteArray& username, const QByteArray& password, const QByteArray& hostname)
+{
+	Worker* w = qobject_cast<Worker*>(this->sender());
+	if (!w) {
+		return;
+	}
+
+#ifdef HAVE_PAM
+	PAMAuthenticator* a = new PAMAuthenticator(username, password, hostname, w);
+	if (a->authenticate()) {
+		w->acceptAuthentication();
+	}
+	else {
+		w->rejectAuthentication();
+		delete a;
+	}
+
+	return;
+#endif
+
+	w->acceptAuthentication();
 }

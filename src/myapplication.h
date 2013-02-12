@@ -17,6 +17,7 @@ public:
 private Q_SLOTS:
 	void unixSignalHandler(int sig);
 	void newConnectionHandler(void);
+	void authenticateRequest(const QByteArray& username, const QByteArray& password, const QByteArray& hostname);
 
 private:
 	QSettings* m_settings;

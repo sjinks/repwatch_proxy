@@ -256,7 +256,7 @@ void WorkerTest::testAuthBadVersion(void)
 
 void WorkerTest::testRejectAuth(void)
 {
-	QSignalSpy spy(this->worker, SIGNAL(authenticateRequest(QByteArray,QByteArray)));
+	QSignalSpy spy(this->worker, SIGNAL(authenticateRequest(QByteArray,QByteArray,QByteArray)));
 
 	this->writeData("\x05\x01\x02");
 	QCOMPARE(this->worker->m_state, Worker::AwaitingAuthenticationState);
@@ -270,7 +270,7 @@ void WorkerTest::testRejectAuth(void)
 
 	this->writeData("\x01\x01\x50\x01\x51");
 	QCOMPARE(spy.count(), 1);
-	QCOMPARE(spy.first().size(), 2);
+	QCOMPARE(spy.first().size(), 3);
 
 	QVariantList args = spy.takeFirst();
 	QVariant u = args.at(0);
@@ -296,7 +296,7 @@ void WorkerTest::testRejectAuth(void)
 
 void WorkerTest::testAcceptAuth(void)
 {
-	QSignalSpy spy(this->worker, SIGNAL(authenticateRequest(QByteArray,QByteArray)));
+	QSignalSpy spy(this->worker, SIGNAL(authenticateRequest(QByteArray,QByteArray,QByteArray)));
 
 	this->writeData("\x05\x01\x02");
 	QCOMPARE(this->worker->m_state, Worker::AwaitingAuthenticationState);
@@ -310,7 +310,7 @@ void WorkerTest::testAcceptAuth(void)
 
 	this->writeData("\x01\x01\x50\x01\x51");
 	QCOMPARE(spy.count(), 1);
-	QCOMPARE(spy.first().size(), 2);
+	QCOMPARE(spy.first().size(), 3);
 
 	QVariantList args = spy.takeFirst();
 	QVariant u = args.at(0);
@@ -336,7 +336,7 @@ void WorkerTest::testAcceptAuth(void)
 
 void WorkerTest::testZeroLengthAuth(void)
 {
-	QSignalSpy spy(this->worker, SIGNAL(authenticateRequest(QByteArray,QByteArray)));
+	QSignalSpy spy(this->worker, SIGNAL(authenticateRequest(QByteArray,QByteArray,QByteArray)));
 
 	this->writeData("\x05\x01\x02");
 	QCOMPARE(this->worker->m_state, Worker::AwaitingAuthenticationState);
@@ -350,7 +350,7 @@ void WorkerTest::testZeroLengthAuth(void)
 
 	this->writeData(QByteArray("\x01\x00\x00", 3));
 	QCOMPARE(spy.count(), 1);
-	QCOMPARE(spy.first().size(), 2);
+	QCOMPARE(spy.first().size(), 3);
 
 	QVariantList args = spy.takeFirst();
 	QVariant u = args.at(0);
@@ -376,7 +376,7 @@ void WorkerTest::testZeroLengthAuth(void)
 
 void WorkerTest::testAuthByteByByte(void)
 {
-	QSignalSpy spy(this->worker, SIGNAL(authenticateRequest(QByteArray,QByteArray)));
+	QSignalSpy spy(this->worker, SIGNAL(authenticateRequest(QByteArray,QByteArray,QByteArray)));
 
 	this->writeData("\x05\x01\x02");
 	QCOMPARE(this->worker->m_state, Worker::AwaitingAuthenticationState);
@@ -399,7 +399,7 @@ void WorkerTest::testAuthByteByByte(void)
 	QCOMPARE(this->worker->m_expected_length, 4);
 	this->writeData(QByteArray("\x50", 1));
 	QCOMPARE(spy.count(), 1);
-	QCOMPARE(spy.first().size(), 2);
+	QCOMPARE(spy.first().size(), 3);
 
 	QVariantList args = spy.takeFirst();
 	QVariant u = args.at(0);

@@ -41,7 +41,7 @@ private Q_SLOTS:
 Q_SIGNALS:
 	void connectionClosed(void);
 	void error(Worker::Error e);
-	void authenticateRequest(const QByteArray& username, const QByteArray& password);
+	void authenticateRequest(const QByteArray& username, const QByteArray& password, const QByteArray& hostname);
 
 private:
 	enum State {

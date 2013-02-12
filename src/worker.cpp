@@ -26,7 +26,6 @@ Worker::Worker(QIODevice* peer, QObject* parent)
 
 Worker::~Worker(void)
 {
-	qDebug("-%p", this);
 }
 
 void Worker::peerReadyReadHandler(void)
@@ -340,14 +339,20 @@ void Worker::authenticate(void)
 		int plen = static_cast<quint8>(this->m_buf.at(ulen + 2));
 		QByteArray username = ulen ? QByteArray(this->m_buf.constData() + 2, ulen) : QByteArray();
 		QByteArray password = plen ? QByteArray(this->m_buf.constData() + 2 + ulen + 1, plen) : QByteArray();
+		QByteArray hostname;
 		this->m_expected_length = -1;
 		this->m_buf.clear();
+
+		QAbstractSocket* sock = qobject_cast<QAbstractSocket*>(this->m_peer);
+		if (sock) {
+			hostname = sock->peerAddress().toString().toLocal8Bit();
+		}
 
 		if (this->m_noauth_allowed && username.isEmpty() && password.isEmpty()) {
 			this->acceptAuthentication();
 		}
 		else {
-			Q_EMIT this->authenticateRequest(username, password);
+			Q_EMIT this->authenticateRequest(username, password, hostname);
 		}
 	}
 }

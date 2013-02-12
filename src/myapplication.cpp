@@ -39,18 +39,29 @@ MyApplication::~MyApplication(void)
 
 int MyApplication::exec(void)
 {
-	QHostAddress a(QHostAddress::Any);
-	quint16 port = 39999;
-
-	QTcpServer* server = new QTcpServer(this);
-	if (!server->listen(a, port)) {
-		qWarning("Failed to start a server on %s:%d: %s", qPrintable(a.toString()), int(port), qPrintable(server->errorString()));
-		delete server;
+	int port              = this->m_settings->value(QLatin1String("server/proxyport"), 39999).toInt();
+	QStringList addresses = this->m_settings->value(QLatin1String("server/listen")).toStringList();
+	if (addresses.isEmpty()) {
+		addresses.append(QHostAddress(QHostAddress::Any).toString());
 	}
-	else {
-		server->setMaxPendingConnections(128);
-		QObject::connect(server, SIGNAL(newConnection()), this, SLOT(newConnectionHandler()));
-		this->m_servers.append(server);
+
+	if (port < 1 || port > 65535) {
+		port = 39999;
+	}
+
+	for (int i=0; i<addresses.size(); ++i) {
+		QHostAddress a(addresses.at(i));
+
+		QTcpServer* server = new QTcpServer(this);
+		if (!server->listen(a, port)) {
+			qWarning("Failed to start a server on %s:%d: %s", qPrintable(a.toString()), int(port), qPrintable(server->errorString()));
+			delete server;
+		}
+		else {
+			server->setMaxPendingConnections(128);
+			QObject::connect(server, SIGNAL(newConnection()), this, SLOT(newConnectionHandler()));
+			this->m_servers.append(server);
+		}
 	}
 
 	if (this->m_servers.isEmpty()) {
@@ -73,7 +84,9 @@ void MyApplication::unixSignalHandler(int sig)
 			break;
 
 		case SIGHUP:
-			// reload
+			// reload settiblongs
+			this->m_settings->sync();
+			// reload app
 			break;
 
 		default:

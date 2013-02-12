@@ -33,6 +33,15 @@ win32 {
 
 DEFINES += REPWATCHPROXY_VERSION=$$VERSION
 
+unix {
+	system('cc -E $$PWD/conftests/pam.cpp -lpam -o /dev/null 2> /dev/null') {
+		DEFINES += HAVE_PAM
+		SOURCES += pamauthenticator.cpp
+		HEADERS += pamauthenticator.h
+		LIBS    += -lpam
+	}
+}
+
 include(libeventdispatcher.pri)
 include(socketconnector.pri)
 include(signalwatcher.pri)

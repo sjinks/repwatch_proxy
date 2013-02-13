@@ -19,8 +19,8 @@ SOURCES = \
 	$$PWD/../../libs/qt_socketconnector/src/socketconnector.cpp \
 	$$PWD/../../libs/qt_socketconnector/src/socketconnector_p.cpp
 
-INCLUDEPATH += $$PWD/../../src
-DEPENDPATH  += $$PWD/../../src
+INCLUDEPATH += $$PWD/../../src $$OUT_PWD/../../src
+DEPENDPATH  += $$PWD/../../src $$OUT_PWD/../../src
 
 INCLUDEPATH += $$PWD/../../libs/qt_socketconnector/src
 DEPENDPATH  += $$PWD/../../libs/qt_socketconnector/src

@@ -25,6 +25,7 @@ private:
 	QList<QTcpServer*> m_servers;
 
 	bool checkAccess(const QHostAddress& remote);
+	bool libwrapCheck(const QHostAddress& remote);
 };
 
 #endif // MYAPPLICATION_H

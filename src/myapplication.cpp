@@ -6,6 +6,7 @@
 #include <signal.h>
 #include "myapplication.h"
 #include "signalwatcher.h"
+#include "functions.h"
 #include "worker.h"
 
 #ifdef HAVE_PAM
@@ -15,6 +16,9 @@
 #ifdef HAVE_LIBWRAP
 #include <tcpd.h>
 #endif
+
+static const QHostAddress loopback_ipv4(QLatin1String("127.0.0.1"));
+static const QHostAddress loopback_ipv6(QLatin1String("::1"));
 
 MyApplication::MyApplication(int &argc, char **argv)
 	: QCoreApplication(argc, argv), m_settings(0), m_servers()
@@ -108,9 +112,14 @@ void MyApplication::newConnectionHandler(void)
 		QTcpSocket* socket = server->nextPendingConnection();
 		Q_ASSERT(socket != 0);
 
-		Worker* w = new Worker(socket, this);
-//		w->setNoauthAllowed(true);
-		QObject::connect(w, SIGNAL(authenticateRequest(QByteArray,QByteArray,QByteArray)), this, SLOT(authenticateRequest(QByteArray,QByteArray,QByteArray)));
+		QHostAddress remote = socket->peerAddress();
+		if (this->checkAccess(remote)) {
+			Worker* w = new Worker(socket, this);
+			QObject::connect(w, SIGNAL(authenticateRequest(QByteArray,QByteArray,QByteArray)), this, SLOT(authenticateRequest(QByteArray,QByteArray,QByteArray)));
+		}
+		else {
+			socket->abort();
+		}
 	}
 }
 
@@ -138,29 +147,16 @@ void MyApplication::authenticateRequest(const QByteArray& username, const QByteA
 #else
 
 	if (username.isEmpty() && password.isEmpty()) {
-		static const QHostAddress loopback_ipv4(QLatin1String("127.0.0.1"));
-		static const QHostAddress loopback_ipv6(QLatin1String("::1"));
-
 		int pwless_anybody = this->m_settings->value(QLatin1String("users/passwordless_anybody")).toInt();
-		if (pwless_anybody == 1) {
+		if (1 == pwless_anybody) {
 			// Hopefully you know what you do
 			qDebug("Accepting anonymous login from %s", hostname.constData());
 			w->acceptAuthentication();
 			return;
 		}
 
-		int pwless_repwatch = this->m_settings->value(QLatin1String("users/passwordless_repwatch")).toInt();
-		if (pwless_repwatch == 1) {
-			bool repwatch = w->property("repwatch").toBool();
-			if (repwatch) {
-				qDebug("Accepting passwordless login from repwatch (%s)", hostname.constData());
-				w->acceptAuthentication();
-				return;
-			}
-		}
-
 		int pwless_localhost = this->m_settings->value(QLatin1String("users/passwordless_localhost")).toInt();
-		if (pwless_localhost == 1) {
+		if (1 == pwless_localhost) {
 			QHostAddress remote(QString::fromLatin1(hostname.constData()));
 			if (remote == loopback_ipv4 || remote == loopback_ipv6) {
 				qDebug("Accepting passwordless login from localhost (%s)", hostname.constData());
@@ -187,8 +183,70 @@ void MyApplication::authenticateRequest(const QByteArray& username, const QByteA
 
 bool MyApplication::checkAccess(const QHostAddress& remote)
 {
-	bool result = false;
+	if (!this->libwrapCheck(remote)) {
+		qDebug("Access from %s forbidden by libwrap", qPrintable(remote.toString()));
+		return false;
+	}
 
+	QStringList allow = this->m_settings->value(QLatin1String("access/allow")).toStringList();
+	if (!allow.isEmpty()) {
+		for (int i=0; i<allow.size(); ++i) {
+			const QString& a = allow.at(i);
+			int pos = a.indexOf(QRegExp(QString::fromLatin1("/([0-9]|[12][0-9]|3[012])$")));
+			if (-1 == pos) {
+				QHostAddress addr(a);
+				if (addr == remote) {
+					qDebug("Access from %s allowed by rule [%s]", qPrintable(remote.toString()), qPrintable(a));
+					return true;
+				}
+			}
+			else {
+				QString ip  = a.left(pos);
+				QString pfx = a.mid(pos+1);
+				int prefix  = pfx.toInt();
+				QHostAddress addr(ip);
+
+				if (inSubnet(remote, addr, prefix)) {
+					qDebug("Access from %s allowed by rule [%s]", qPrintable(remote.toString()), qPrintable(a));
+					return true;
+				}
+			}
+		}
+
+		qDebug("No rules allow access from %s", qPrintable(remote.toString()));
+		return false;
+	}
+
+	QStringList deny = this->m_settings->value(QLatin1String("access/deny")).toStringList();
+	for (int i=0; i<deny.size(); ++i) {
+		const QString& a = deny.at(i);
+		int pos = a.indexOf(QRegExp(QString::fromLatin1("/([0-9]|[12][0-9]|3[012])$")));
+		if (-1 == pos) {
+			QHostAddress addr(a);
+			if (addr == remote) {
+				qDebug("Access from %s denied by rule [%s]", qPrintable(remote.toString()), qPrintable(a));
+				return false;
+			}
+		}
+		else {
+			QString ip  = a.left(pos);
+			QString pfx = a.mid(pos+1);
+			int prefix  = pfx.toInt();
+			QHostAddress addr(ip);
+
+			if (inSubnet(remote, addr, prefix)) {
+				qDebug("Access from %s denied by rule [%s]", qPrintable(remote.toString()), qPrintable(a));
+				return false;
+			}
+		}
+	}
+
+	qDebug("Allowing access from %s", qPrintable(remote.toString()));
+	return true;
+}
+
+bool MyApplication::libwrapCheck(const QHostAddress& remote)
+{
 #ifdef HAVE_LIBWRAP
 	int use_libwrap = this->m_settings->value(QLatin1String("access/use_libwrap"), 0).toInt();
 	if (use_libwrap != 1) {
@@ -229,7 +287,9 @@ bool MyApplication::checkAccess(const QHostAddress& remote)
 			return false;
 		}
 	}
+#else
+	Q_UNUSED(remote)
 #endif
 
-	return result;
+	return true;
 }

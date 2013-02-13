@@ -3,7 +3,8 @@ TEMPLATE = subdirs
 SUBDIRS += \
 	signalwatcher \
 	socketconnector \
-	worker
+	worker \
+	insubnet
 
 greaterThan(QT_MAJOR_VERSION, 4) {
 	SUBDIRS += libeventdispatcher-qt5

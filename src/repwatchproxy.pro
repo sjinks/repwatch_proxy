@@ -18,13 +18,15 @@ DEFINES *= \
 HEADERS += \
 	myapplication.h \
 	msghandler.h \
-	worker.h
+	worker.h \
+	functions.h
 
 SOURCES += \
 	main.cpp \
 	msghandler.cpp \
 	myapplication.cpp \
-	worker.cpp
+	worker.cpp \
+	functions.cpp
 
 win32 {
 	HEADERS += win_syslog.h

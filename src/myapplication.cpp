@@ -88,7 +88,7 @@ void MyApplication::unixSignalHandler(int sig)
 			break;
 
 		case SIGHUP:
-			// reload settiblongs
+			// reload settings
 			this->m_settings->sync();
 			// reload app
 			break;
@@ -134,7 +134,51 @@ void MyApplication::authenticateRequest(const QByteArray& username, const QByteA
 	return;
 #endif
 
-	w->acceptAuthentication();
+	if (username.isEmpty() && password.isEmpty()) {
+		static const QHostAddress loopback_ipv4(QLatin1String("127.0.0.1"));
+		static const QHostAddress loopback_ipv6(QLatin1String("::1"));
+
+		int pwless_anybody = this->m_settings->value(QLatin1String("users/passwordless_anybody")).toInt();
+		if (pwless_anybody == 1) {
+			// Hopefully you know what you do
+			qDebug("Accepting anonymous login from %s", hostname.constData());
+			w->acceptAuthentication();
+			return;
+		}
+
+		int pwless_repwatch = this->m_settings->value(QLatin1String("users/passwordless_repwatch")).toInt();
+		if (pwless_repwatch == 1) {
+			bool repwatch = w->property("repwatch").toBool();
+			if (repwatch) {
+				qDebug("Accepting passwordless login from repwatch (%s)", hostname.constData());
+				w->acceptAuthentication();
+				return;
+			}
+		}
+
+		int pwless_localhost = this->m_settings->value(QLatin1String("users/passwordless_localhost")).toInt();
+		if (pwless_localhost == 1) {
+			QHostAddress remote(QString::fromLatin1(hostname.constData()));
+			if (remote == loopback_ipv4 || remote == loopback_ipv6) {
+				qDebug("Accepting passwordless login from localhost (%s)", hostname.constData());
+				w->acceptAuthentication();
+				return;
+			}
+		}
+	}
+	else {
+		QByteArray u = this->m_settings->value(QLatin1String("users/username")).toByteArray();
+		QByteArray p = this->m_settings->value(QLatin1String("users/password")).toByteArray();
+
+		if (u == username && p == password) {
+			qDebug("Accepting user %s from %s", u.constData(), hostname.constData());
+			w->acceptAuthentication();
+			return;
+		}
+	}
+
+	qDebug("Rejecting user %s from %s", username.constData(), hostname.constData());
+	w->rejectAuthentication();
 }
 
 bool MyApplication::checkAccess(const QHostAddress& remote)

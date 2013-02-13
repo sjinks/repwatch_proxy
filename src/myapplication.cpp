@@ -124,15 +124,18 @@ void MyApplication::authenticateRequest(const QByteArray& username, const QByteA
 #ifdef HAVE_PAM
 	PAMAuthenticator* a = new PAMAuthenticator(username, password, hostname, w);
 	if (a->authenticate()) {
+		qDebug("PAM: Accepting user %s from %s", username.constData(), hostname.constData());
 		w->acceptAuthentication();
+		// authenticator will be deleted when worker terminates; this is to close the session at appropriate time
 	}
 	else {
+		qDebug("PAM: Rejecting user %s from %s", username.constData(), hostname.constData());
 		w->rejectAuthentication();
 		delete a;
 	}
 
 	return;
-#endif
+#else
 
 	if (username.isEmpty() && password.isEmpty()) {
 		static const QHostAddress loopback_ipv4(QLatin1String("127.0.0.1"));
@@ -179,6 +182,7 @@ void MyApplication::authenticateRequest(const QByteArray& username, const QByteA
 
 	qDebug("Rejecting user %s from %s", username.constData(), hostname.constData());
 	w->rejectAuthentication();
+#endif
 }
 
 bool MyApplication::checkAccess(const QHostAddress& remote)

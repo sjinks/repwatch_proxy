@@ -131,20 +131,23 @@ void MyApplication::authenticateRequest(const QByteArray& username, const QByteA
 	}
 
 #ifdef HAVE_PAM
-	PAMAuthenticator* a = new PAMAuthenticator(username, password, hostname, w);
-	if (a->authenticate()) {
-		qDebug("PAM: Accepting user %s from %s", username.constData(), hostname.constData());
-		w->acceptAuthentication();
-		// authenticator will be deleted when worker terminates; this is to close the session at appropriate time
-	}
-	else {
-		qDebug("PAM: Rejecting user %s from %s", username.constData(), hostname.constData());
-		w->rejectAuthentication();
-		delete a;
-	}
+	int use_pam = this->m_settings->value(QLatin1String("users/use_pam")).toInt();
+	if (1 == use_pam) {
+		PAMAuthenticator* a = new PAMAuthenticator(username, password, hostname, w);
+		if (a->authenticate()) {
+			qDebug("PAM: Accepting user %s from %s", username.constData(), hostname.constData());
+			w->acceptAuthentication();
+			// authenticator will be deleted when worker terminates; this is to close the session at appropriate time
+		}
+		else {
+			qDebug("PAM: Rejecting user %s from %s", username.constData(), hostname.constData());
+			w->rejectAuthentication();
+			delete a;
+		}
 
-	return;
-#else
+		return;
+	}
+#endif
 
 	if (username.isEmpty() && password.isEmpty()) {
 		int pwless_anybody = this->m_settings->value(QLatin1String("users/passwordless_anybody")).toInt();
@@ -178,7 +181,6 @@ void MyApplication::authenticateRequest(const QByteArray& username, const QByteA
 
 	qDebug("Rejecting user %s from %s", username.constData(), hostname.constData());
 	w->rejectAuthentication();
-#endif
 }
 
 bool MyApplication::checkAccess(const QHostAddress& remote)

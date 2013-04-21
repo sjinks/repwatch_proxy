@@ -143,7 +143,10 @@ void Worker::targetConnectedHandler(void)
 		this->m_state = Worker::ConnectionProxiedState;
 	}
 	else {
-		this->m_peer->close();
+		if (this->m_peer) {
+			this->m_peer->close();
+		}
+
 		this->m_state = Worker::FatalErrorState;
 	}
 }
@@ -156,7 +159,10 @@ void Worker::targetConnectFailureHandler(QAbstractSocket::SocketError e)
 	}
 
 	this->writeAndFlush(this->m_peer, response, 10);
-	this->m_peer->close();
+	if (this->m_peer) {
+		this->m_peer->close();
+	}
+
 	this->m_state = Worker::FatalErrorState;
 }
 
@@ -164,15 +170,19 @@ void Worker::disconnectHandler(void)
 {
 	Q_EMIT this->connectionClosed();
 
-	this->m_peer->disconnect(this);
-	this->m_peer->deleteLater();
+	if (this->m_peer) {
+		this->m_peer->disconnect(this);
+		this->m_peer->deleteLater();
+	}
 
 	if (this->m_target) {
 		this->m_target->disconnect(this);
 		this->m_target->deleteLater();
 	}
 
-	QObject::connect(this->m_peer, SIGNAL(destroyed()), this, SLOT(deleteLater()), Qt::QueuedConnection);
+	if (this->m_peer) {
+		QObject::connect(this->m_peer, SIGNAL(destroyed()), this, SLOT(deleteLater()), Qt::QueuedConnection);
+	}
 }
 
 void Worker::peerErrorHandler(QAbstractSocket::SocketError e)

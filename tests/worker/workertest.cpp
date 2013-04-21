@@ -48,7 +48,7 @@ void WorkerTest::cleanup(void)
 
 void WorkerTest::testGreeting(void)
 {
-	QCOMPARE(this->worker->m_peer, this->input);
+	QCOMPARE(this->worker->m_peer.data(), this->input);
 	QCOMPARE(this->worker->m_state, Worker::ConnectedState);
 	QVERIFY(!this->worker->m_target);
 	QVERIFY(!this->worker->m_connector);

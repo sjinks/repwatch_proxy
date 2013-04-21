@@ -2,6 +2,7 @@
 #define WORKER_H
 
 #include <QtCore/QObject>
+#include <QtCore/QPointer>
 #include <QtNetwork/QAbstractSocket>
 
 class QIODevice;
@@ -55,7 +56,7 @@ private:
 		FatalErrorState
 	};
 
-	QIODevice* m_peer;
+	QPointer<QIODevice> m_peer;
 	QTcpSocket* m_target;
 	SocketConnector* m_connector;
 	QByteArray m_buf;

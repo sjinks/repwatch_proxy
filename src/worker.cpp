@@ -593,13 +593,17 @@ void Worker::parseRequest(void)
 
 qint64 Worker::writeAndFlush(QIODevice* device, const char* buf, int size)
 {
-	qint64 res = device->write(buf, size);
-	QAbstractSocket* sock = qobject_cast<QAbstractSocket*>(device);
-	if (sock) {
-		sock->flush();
+	if (device) {
+		qint64 res = device->write(buf, size);
+		QAbstractSocket* sock = qobject_cast<QAbstractSocket*>(device);
+		if (sock) {
+			sock->flush();
+		}
+
+		return res;
 	}
 
-	return res;
+	return -1;
 }
 
 qint64 Worker::writeAndFlush(QIODevice* device, const QByteArray& buf)

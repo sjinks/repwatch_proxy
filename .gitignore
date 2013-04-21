@@ -8,3 +8,4 @@ moc_*
 *.so
 Makefile
 Makefile.*
+/bin/*

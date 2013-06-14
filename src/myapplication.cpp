@@ -116,6 +116,8 @@ void MyApplication::newConnectionHandler(void)
 		if (this->checkAccess(remote)) {
 			Worker* w = new Worker(socket, this);
 			QObject::connect(w, SIGNAL(authenticateRequest(QByteArray,QByteArray,QByteArray)), this, SLOT(authenticateRequest(QByteArray,QByteArray,QByteArray)));
+			int pwless_anybody = this->m_settings->value(QLatin1String("users/passwordless_anybody")).toInt();
+			w->setNoauthAllowed(1 == pwless_anybody);
 		}
 		else {
 			socket->abort();

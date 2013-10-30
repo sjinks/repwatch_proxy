@@ -48,7 +48,9 @@ void WorkerTest::cleanup(void)
 
 void WorkerTest::testGreeting(void)
 {
+#if QT_VERSION >= 0x40300
 	QCOMPARE(this->worker->m_peer.data(), this->input);
+#endif
 	QCOMPARE(this->worker->m_state, Worker::ConnectedState);
 	QVERIFY(!this->worker->m_target);
 	QVERIFY(!this->worker->m_connector);

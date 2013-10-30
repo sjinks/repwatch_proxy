@@ -59,3 +59,6 @@ win32 {
 	HEADERS += $$PWD/../libs/qt_eventdispatcher_libevent/src/wsainit.h
 	LIBS    += -lws2_32
 }
+
+CONFIG += qtestlib console
+CONFIG -= app_bundle

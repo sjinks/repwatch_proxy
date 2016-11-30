@@ -9,3 +9,4 @@ moc_*
 Makefile
 Makefile.*
 /bin/*
+.qmake.stash
